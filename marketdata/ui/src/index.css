@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Inter:wght@400;600&display=swap');
+
+:root {
+    --bg-primary: #121212;
+    --bg-secondary: #1e1e1e;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --accent-orange: #ff9800;
+    /* Bloomberg Orange */
+    --accent-blu: #03a9f4;
+    --border-color: #333;
+    --font-mono: 'Roboto Mono', monospace;
+    --font-sans: 'Inter', sans-serif;
+}
+
+body {
+    margin: 0;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    overflow: hidden;
+    /* Prevent body scroll, layout handles it */
+}
+
+.bloomberg-app {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-header {
+    height: 40px;
+    background-color: #000;
+    border-bottom: 1px solid var(--accent-orange);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    font-family: var(--font-mono);
+}
+
+.logo {
+    color: var(--accent-orange);
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.terminal-text {
+    color: #fff;
+}
+
+.status-bar {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.status-ok {
+    color: #00e676;
+}
+
+/* Grid Layout Styling */
+.react-grid-item {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.react-grid-placeholder {
+    background: var(--accent-orange) !important;
+    opacity: 0.2;
+}
+
+/* Widget General Styles */
+.widget {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+}
+
+.widget h3 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: var(--accent-orange);
+    font-family: var(--font-mono);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 4px;
+}
+
+/* Widget Specifics Placeholder */
+.market-widget {
+    background: #1a1a1a;
+}
+
+.chart-widget {
+    background: #161616;
+}
+
+.news-widget {
+    background: #1a1a1a;
+}
+
+.sector-widget {
+    background: #1a1a1a;
+}

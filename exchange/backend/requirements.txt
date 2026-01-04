@@ -1,0 +1,9 @@
+redis
+kafka-python
+pydantic
+pydantic-settings
+fastapi
+uvicorn
+websockets
+python-dotenv
+redis>=4.2.0

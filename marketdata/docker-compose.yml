@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  marketdata-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: marketdata-backend
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./backend:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDPANDA_BROKER=fintech_redpanda:9092
+      - REDIS_HOST=fintech_redis
+    networks:
+      - tradingserver-net
+      - fintech_net
+
+  marketdata-ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: marketdata-ui
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./ui:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=https://seminarial-elevatingly-marisol.ngrok-free.dev
+    depends_on:
+      - marketdata-backend
+    networks:
+      - tradingserver-net
+
+  marketdata-proxy:
+    image: nginx:alpine
+    container_name: marketdata-proxy
+    ports:
+      - "3000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - marketdata-ui
+      - marketdata-backend
+    networks:
+      - tradingserver-net
+
+networks:
+  tradingserver-net:
+    driver: bridge
+  fintech_net:
+    external: true
+    name: infrastructure_fintech-net

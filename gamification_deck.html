@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- WhatsApp / Social Media Preview Tags -->
+    <meta property="og:title" content="FinTech EduLab | Gamification Deck">
+    <meta property="og:description"
+        content="Career Launchpad for FinTech & DeepTech. From WebSocket Ticker Plants to Kafka Drop Copies. See the 8-Level Engineering Ladder.">
+    <meta property="og:image" content="whatsapp_preview.png">
+    <meta property="og:type" content="website">
+
+    <title>FinTech EduLab | Gamification Deck</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-dark: #0f172a;
+            --accent-cyan: #06b6d4;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-gold: #f59e0b;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(148, 163, 184, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* --- LAYOUT UTILS --- */
+        .slide {
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            position: relative;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            z-index: 2;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: var(--accent-cyan);
+            font-weight: 600;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        p.subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 3rem auto;
+        }
+
+        /* --- GRAPHIC: TERMINAL --- */
+        .terminal {
+            background: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            font-family: 'JetBrains Mono', monospace;
+            padding: 0;
+            overflow: hidden;
+            border: 1px solid #333;
+            max-width: 700px;
+            margin: 0 auto;
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUp 1s forwards 0.5s;
+        }
+
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 10px 15px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .red {
+            background: #ff5f56;
+        }
+
+        .yellow {
+            background: #ffbd2e;
+        }
+
+        .green {
+            background: #27c93f;
+        }
+
+        .terminal-body {
+            padding: 20px;
+            color: #d4d4d4;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- COMPONENT: ANIMATED BADGE ROADMAP --- */
+        .roadmap {
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 0;
+        }
+
+        .roadmap::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            background-color: #1e293b;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -2px;
+            z-index: 0;
+        }
+
+        .checkpoint {
+            padding: 10px 40px;
+            position: relative;
+            width: 50%;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+            cursor: pointer;
+            /* Clickable */
+        }
+
+        .checkpoint.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Interactive Hover State */
+        .checkpoint:hover .content {
+            border-color: var(--accent-cyan);
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.1);
+        }
+
+        /* Timeline Dots */
+        .checkpoint::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            right: -10px;
+            background-color: var(--bg-dark);
+            border: 4px solid var(--accent-blue);
+            top: 30px;
+            border-radius: 50%;
+            z-index: 1;
+            transition: border-color 0.3s ease;
+        }
+
+        .checkpoint:hover::after {
+            border-color: var(--accent-cyan);
+            background-color: var(--accent-cyan);
+        }
+
+        .left {
+            left: 0;
+        }
+
+        .right {
+            left: 50%;
+        }
+
+        .left::after {
+            right: -14px;
+        }
+
+        .right::after {
+            left: -10px;
+        }
+
+        .content {
+            padding: 25px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+            transition: all 0.3s ease;
+        }
+
+        /* Badge Styling */
+        .badge-icon {
+            min-width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.2));
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .text-content h3 {
+            color: var(--text-main);
+            font-size: 1.2rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .role-title {
+            color: var(--accent-cyan);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .tech-list {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .click-hint {
+            font-size: 0.7rem;
+            color: var(--accent-blue);
+            margin-top: 0.5rem;
+            opacity: 0.7;
+            display: block;
+        }
+
+        /* --- GRAPHIC: ARCHITECTURE --- */
+        .graphic-container {
+            margin: 2rem auto;
+            max-width: 800px;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+        }
+
+        .diagram-box {
+            fill: #1e293b;
+            stroke: #475569;
+            stroke-width: 2;
+        }
+
+        .diagram-text {
+            fill: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            text-anchor: middle;
+        }
+
+        .connection-line {
+            stroke: #64748b;
+            stroke-width: 2;
+            stroke-dasharray: 5;
+            animation: flow 20s linear infinite;
+        }
+
+        @keyframes flow {
+            to {
+                stroke-dashoffset: -100;
+            }
+        }
+
+        /* --- COMPONENT: MODAL --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-card {
+            background: #1e293b;
+            border: 1px solid var(--accent-cyan);
+            border-radius: 16px;
+            padding: 3rem;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            box-shadow: 0 25px 50px -12px rgba(6, 182, 212, 0.25);
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: translateY(0);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #fff;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        .modal-subtitle {
+            color: var(--accent-cyan);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2rem;
+        }
+
+        .modal-section-title {
+            font-family: 'JetBrains Mono';
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .modal-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+            margin-bottom: 2rem;
+        }
+
+        .tech-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .tech-tag {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono';
+            font-size: 0.8rem;
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HERO -->
+    <section class="slide" style="min-height: 80vh;">
+        <div class="container" style="text-align: center;">
+            <h1>FinTech EduLab</h1>
+            <p class="subtitle">Career Launchpad for FinTech & DeepTech.<br><b>Protocol. Low Latency. Distributed
+                    Systems.</b></p>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="terminal-body" style="text-align: left;">
+                    <span style="color: #569cd6;">></span> ./start_career.sh --track=fintech_architect<br>
+                    <span style="color: #6a9955;">[+] Initializing Exchange Environment...</span><br>
+                    <span style="color: #dcdcaa;">> Market Data Feed... </span><span style="color: #569cd6;">ONLINE
+                        (ws://8000)</span><br>
+                    <span style="color: #dcdcaa;">> FIX Gateway... </span><span style="color: #569cd6;">LISTENING
+                        (tcp://9898)</span><br>
+                    <span style="color: #dcdcaa;">> Kafka Cluster... </span><span style="color: #569cd6;">READY
+                        (kafka://9092)</span><br>
+                    <span style="color: #569cd6;">></span> Environment Ready. Awaiting Connection...<span
+                        class="blink">_</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ARCHITECTURE -->
+    <section class="slide">
+        <div class="container">
+            <h2>Standard Enterprise Architecture</h2>
+            <p class="subtitle">Learn the exact protocols used by Tier-1 Banks and Exchanges.</p>
+            <div class="graphic-container">
+                <svg viewBox="0 0 800 400">
+                    <rect x="450" y="50" width="300" height="300" rx="10" fill="#0f172a" stroke="#64748b"
+                        stroke-width="2" stroke-dasharray="2 2" />
+                    <text x="600" y="80" class="diagram-text" fill="#94a3b8" font-weight="bold">EXCHANGE
+                        INFRASTRUCTURE</text>
+                    <rect x="500" y="120" width="200" height="40" rx="5" class="diagram-box" /><text x="600" y="145"
+                        class="diagram-text">Matching Engine</text>
+                    <rect x="500" y="240" width="200" height="40" rx="5" class="diagram-box" /><text x="600" y="265"
+                        class="diagram-text">Market Data Feed</text>
+                    <rect x="50" y="50" width="300" height="300" rx="10" fill="#0f172a" stroke="#3b82f6"
+                        stroke-width="2" />
+                    <text x="200" y="80" class="diagram-text" fill="#3b82f6" font-weight="bold">PROPRIETARY TRADING
+                        DESK</text>
+                    <rect x="100" y="120" width="200" height="40" rx="5" class="diagram-box" style="stroke: #3b82f6;" />
+                    <text x="200" y="145" class="diagram-text">FIX Routing Logic</text>
+                    <rect x="100" y="240" width="200" height="40" rx="5" class="diagram-box" style="stroke: #3b82f6;" />
+                    <text x="200" y="265" class="diagram-text">Feed Handler</text>
+                    <line x1="300" y1="140" x2="500" y2="140" class="connection-line" /><text x="400" y="130"
+                        class="diagram-text" font-size="10">FIX 4.2 / TCP</text>
+                    <line x1="300" y1="260" x2="500" y2="260" class="connection-line" /><text x="400" y="250"
+                        class="diagram-text" font-size="10">WebSocket / JSON</text>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- ROADMAP -->
+    <section class="slide">
+        <div class="container">
+            <h2>The Engineering Ladder</h2>
+
+            <div class="roadmap">
+
+                <!-- LVL 1 -->
+                <div class="checkpoint left" data-title="Ticker Plant" data-role="Real-Time Data Engineer"
+                    data-desc="Connect to the WebSocket feed. Parse 1,000 JSON messages/sec without blocking the event loop. Normalize data into internal C structures."
+                    data-learn="Async I/O Patterns, WebSocket Protocol, Deserialization Optimization, Latency Management">
+                    <div class="content">
+                        <div class="badge-icon">📡</div>
+                        <div class="text-content">
+                            <span class="role-title">Level 1: Real-Time Data Engineer</span>
+                            <h3>Ticker Plant</h3>
+                            <p style="font-size: 0.9rem; color: #94a3b8;">High-speed WebSocket ingestion.</p>
+                            <span class="click-hint">Click for Challenge Details ↗</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LVL 2 -->
+                <div class="checkpoint right" data-title="The FIX Gateway" data-role="Connectivity Specialist"
+                    data-desc="Establish a persistent TCP connection. Implement a 30s Heartbeat timer. Handle Logon/Logout sequences compliant with FIX 4.2 specs."
+                    data-learn="TCP/IP Socket Programming, FIX Protocol (Tag 35=A/0/5), Keep-alive Mechanisms, Byte-stream framing">
+                    <div class="content">
+                        <div class="badge-icon">🔌</div>
+                        <div class="text-content">
+                            <span class="role-title">Level 2: Connectivity Specialist</span>
+                            <h3>The FIX Gateway</h3>
+                            <p style="font-size: 0.9rem; color: #94a3b8;">Raw FIX 4.2 Protocol implementation.</p>
+                            <span class="click-hint">Click for Challenge Details ↗</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LVL 3 -->
+                <div class="checkpoint left" data-title="First Execution" data-role="Algo Engineer"
+                    data-desc="Parse a real-time signal from the Market Data Feed and immediately trigger a NewOrderSingle (35=D) to the Gateway. Must execute within 10ms."
+                    data-learn="Event-Driven Architecture, Latency Sensitivity, Order Lifecycle State Machines, Request/Response Correlation">
+                    <div class="content">
+                        <div class="badge-icon">🤖</div>
+                        <div class="text-content">
+                            <span class="role-title">Level 3: Algo Engineer</span>
+                            <h3>First Execution</h3>
+                            <p style="font-size: 0.9rem; color: #94a3b8;">Automate orders based on Live Signals.</p>
+                            <span class="click-hint">Click for Challenge Details ↗</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LVL 4 -->
+                <div class="checkpoint right" data-title="The Firehose" data-role="Data Engineer"
+                    data-desc="Connect a Kafka Consumer to the 'exchange_trades' topic. Reconcile lost packets from the WebSocket feed against this persistent log for 100% integrity."
+                    data-learn="Apache Kafka, Offset Management, Data Consistency, Distributed Log Architectures, Stream Processing">
+                    <div class="content" style="border-color: var(--accent-gold);">
+                        <div class="badge-icon"
+                            style="background: rgba(245, 158, 11, 0.2); border-color: var(--accent-gold);">🔥</div>
+                        <div class="text-content">
+                            <span class="role-title" style="color: var(--accent-gold);">Level 4: Data Engineer</span>
+                            <h3>The Firehose</h3>
+                            <p style="font-size: 0.9rem; color: #94a3b8;">Kafka 'Drop Copy' stream integration.</p>
+                            <span class="click-hint" style="color: var(--accent-gold);">Click for Challenge Details
+                                ↗</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LVL 5 -->
+                <div class="checkpoint left" data-title="The Shadow Book" data-role="Systems Architect"
+                    data-desc="Maintain a local Order Book by processing 'Incremental Refresh' messages. Your local state must match the Exchange's Snapshot API perfectly after 10k updates."
+                    data-learn="Advanced Data Structures (RB-Trees), State Management, Order Book Dynamics, Memory Optimization">
+                    <div class="content" style="border-color: var(--accent-gold);">
+                        <div class="badge-icon"
+                            style="background: rgba(245, 158, 11, 0.2); border-color: var(--accent-gold);">👤</div>
+                        <div class="text-content">
+                            <span class="role-title" style="color: var(--accent-gold);">Level 5: Systems
+                                Architect</span>
+                            <h3>The Shadow Book</h3>
+                            <p style="font-size: 0.9rem; color: #94a3b8;">Local Order Book reconstruction.</p>
+                            <span class="click-hint" style="color: var(--accent-gold);">Click for Challenge Details
+                                ↗</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LVL 6 -->
+                <div class="checkpoint right" data-title="The Shield" data-role="Risk Guardian"
+                    data-desc="Implement a 'Pre-Trade Risk Layer'. Intercept all outgoing orders. Block orders > $1M value or 5% away from last price. Latency budget: < 100 microseconds."
+                    data-learn="Critical Path Optimization, Defensive Programming, Fat-Finger Controls, Low-Latency Gateways">
+                    <div class="content" style="border-color: var(--accent-gold);">
+                        <div class="badge-icon"
+                            style="background: rgba(245, 158, 11, 0.2); border-color: var(--accent-gold);">🛡️</div>
+                        <div class="text-content">
+                            <span class="role-title" style="color: var(--accent-gold);">Level 6: Risk Guardian</span>
+                            <h3>The Shield</h3>
+                            <p style="font-size: 0.9rem; color: #94a3b8;">Pre-trade Risk checks < 100μs.</p>
+                                    <span class="click-hint" style="color: var(--accent-gold);">Click for Challenge
+                                        Details ↗</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LVL 7 -->
+                <div class="checkpoint left" data-title="The Survivor" data-role="Reliability Engineer"
+                    data-desc="Chaos Mode activated. The server will actively sever TCP connections and degrade network performance. Client must auto-reconnect and resync state < 2s."
+                    data-learn="Disaster Recovery, Exponential Backoff, Resilience Patterns, Chaos Engineering">
+                    <div class="content" style="border-color: var(--accent-red);">
+                        <div class="badge-icon"
+                            style="background: rgba(239, 68, 68, 0.2); border-color: var(--accent-red);">🧟</div>
+                        <div class="text-content">
+                            <span class="role-title" style="color: var(--accent-red);">Level 7: Reliability
+                                Engineer</span>
+                            <h3>The Survivor</h3>
+                            <p style="font-size: 0.9rem; color: #94a3b8;">Survive 'Chaos Mode' (TCP Resets).</p>
+                            <span class="click-hint" style="color: var(--accent-red);">Click for Challenge Details
+                                ↗</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LVL 8 -->
+                <div class="checkpoint right" data-title="Grandmaster" data-role="Principal Architect"
+                    data-desc="Deploy a Market Making strategy on RELIANCE.NS. Quote both sides, manage inventory risk, and remain profitable for a 10min session."
+                    data-learn="Full Stack Financial Engineering, Inventory Management, Production-Grade Stability, CI/CD">
+                    <div class="content" style="border-color: var(--accent-green);">
+                        <div class="badge-icon"
+                            style="background: rgba(16, 185, 129, 0.2); border-color: var(--accent-green);">🏆</div>
+                        <div class="text-content">
+                            <span class="role-title" style="color: var(--accent-green);">Level 8: Principal
+                                Architect</span>
+                            <h3>Grandmaster</h3>
+                            <p style="font-size: 0.9rem; color: #94a3b8;">Production-Grade HFT Systems.</p>
+                            <span class="click-hint" style="color: var(--accent-green);">Click for Challenge Details
+                                ↗</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL OVERLAY -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-subtitle" id="modalRole">Role</div>
+            <div class="modal-title" id="modalTitle">Title</div>
+
+            <span class="modal-section-title">THE CHALLENGE</span>
+            <p class="modal-text" id="modalDesc">Description goes here.</p>
+
+            <span class="modal-section-title">WHAT YOU WILL LEARN</span>
+            <div class="tech-tags" id="modalLearn">
+                <!-- Tags populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script>
+        // --- SCROLL ANIMATIONS ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.2 });
+        document.querySelectorAll('.checkpoint').forEach(el => observer.observe(el));
+
+        // --- MODAL LOGIC ---
+        const modal = document.getElementById('detailModal');
+        const mTitle = document.getElementById('modalTitle');
+        const mRole = document.getElementById('modalRole');
+        const mDesc = document.getElementById('modalDesc');
+        const mLearn = document.getElementById('modalLearn');
+
+        function openModal(el) {
+            // Populate Data
+            mTitle.textContent = el.dataset.title;
+            mRole.textContent = el.dataset.role;
+            mDesc.textContent = el.dataset.desc;
+
+            // Clear and split tags
+            mLearn.innerHTML = '';
+            const tags = el.dataset.learn.split(', ');
+            tags.forEach(tag => {
+                const span = document.createElement('span');
+                span.className = 'tech-tag';
+                span.textContent = tag;
+                mLearn.appendChild(span);
+            });
+
+            // Show
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        // Attach Click Listeners
+        document.querySelectorAll('.checkpoint').forEach(el => {
+            el.addEventListener('click', () => openModal(el));
+        });
+
+        // Close on background click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Close on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+
+</html>

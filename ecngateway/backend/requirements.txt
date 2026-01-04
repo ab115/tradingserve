@@ -1,0 +1,9 @@
+quickfix
+redis
+kafka-python-ng
+pydantic
+pydantic-settings
+python-dotenv
+fastapi
+uvicorn
+websockets

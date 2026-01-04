@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+mmenv/
+ecnenv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.coverage
+.tox/
+.pytest_cache/
+
+# Node/JavaScript
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+build/
+.next/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# QuickFIX / Application Logs & Data
+*.log
+store/
+logs/
+store_*/
+log_*/
+*.seq
+*.body
+*.header
+*.session
+*.event
+
+# Docker
+docker-compose.override.yml
+
+# Backups
+ecngateway_backup_*/
+backup/

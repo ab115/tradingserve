@@ -1,0 +1,129 @@
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+import redis.asyncio as redis
+import json
+import asyncio
+from config import settings
+
+app = FastAPI(title="ECN Gateway Realtime API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize Async Redis
+r = redis.Redis(
+    host=settings.REDIS_HOST,
+    port=settings.REDIS_PORT,
+    db=settings.REDIS_DB,
+    decode_responses=True
+)
+
+@app.get("/orders")
+async def get_orders():
+    """Fetch all known orders."""
+    order_ids = await r.smembers("orders:all")
+    orders = []
+    # Pipeline for efficiency?
+    async with r.pipeline() as pipe:
+        for oid in order_ids:
+            pipe.hgetall(f"order:{oid}")
+        results = await pipe.execute()
+    
+    # Merge results
+    for oid, data in zip(order_ids, results):
+        if data:
+            data['internal_id'] = oid # Ensure ID is present
+            orders.append(data)
+    return orders
+
+@app.get("/sessions")
+async def get_sessions():
+    """Fetch status of all sessions."""
+    session_ids = await r.smembers("sessions:all")
+    sessions = []
+    for sid in session_ids:
+        # Get latest status? Or just return the ID and verify liveliness via events?
+        # We can simulate status or fetch last message
+        last_msgs = await r.lrange(f"session:{sid}:messages", -1, -1)
+        status = "Unknown"
+        if last_msgs:
+            try:
+                last_msg = json.loads(last_msgs[0])
+                status = last_msg.get('type')
+            except: 
+                pass
+        sessions.append({"session_id": sid, "status": status})
+    return sessions
+
+@app.get("/admin/messages")
+async def get_admin_messages(limit: int = 50):
+    """Fetch recent session/admin messages."""
+    session_ids = await r.smembers("sessions:all")
+    messages = []
+    # This might be slow if many sessions, but fine for now
+    for sid in session_ids:
+        raw_msgs = await r.lrange(f"session:{sid}:messages", -limit, -1)
+        for m in raw_msgs:
+            try:
+                parsed = json.loads(m)
+                messages.append(parsed)
+            except:
+                pass
+    # Sort by timestamp (descending) roughly if possible, or just return mix
+    return messages
+
+@app.post("/reset")
+async def reset_data():
+    """Clear all orders and session history."""
+    # 1. Clear Orders
+    order_ids = await r.smembers("orders:all")
+    if order_ids:
+        # Construct keys to delete
+        keys_to_del = [f"order:{oid}" for oid in order_ids]
+        await r.delete(*keys_to_del)
+    await r.delete("orders:all")
+
+    # 2. Clear Sessions (Optional? User asked to clear orders, but reset implies full slate)
+    # Let's clean up message history but maybe keep session IDs active if they are still connected?
+    # If we delete session keys, the gateway msg handler will just recreate them on next msg.
+    session_ids = await r.smembers("sessions:all")
+    if session_ids:
+        keys_to_del = [f"session:{sid}:messages" for sid in session_ids]
+        await r.delete(*keys_to_del)
+    await r.delete("sessions:all")
+    
+    # 3. Notify Clients via WS
+    # Broadcast a special "RESET" message
+    await r.publish("updates:orders", json.dumps({"type": "RESET"}))
+    
+    return {"status": "success", "message": "All data cleared."}
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    # Subscribe to Redis channels
+    pubsub = r.pubsub()
+    await pubsub.subscribe("updates:orders", "updates:sessions")
+    
+    try:
+        while True:
+            message = await pubsub.get_message(ignore_subscribe_messages=True)
+            if message:
+                channel = message['channel']
+                data = message['data']
+                # Send to WS client with channel info
+                await websocket.send_json({
+                    "channel": channel,
+                    "payload": json.loads(data)
+                })
+            await asyncio.sleep(0.01) # Simple polling loop for now on pubsub
+    except WebSocketDisconnect:
+        await pubsub.unsubscribe()
+    except Exception as e:
+        print(f"WS Error: {e}")
+        await pubsub.unsubscribe()

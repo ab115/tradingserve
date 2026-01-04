@@ -1,0 +1,127 @@
+[
+    {
+        "ticker": "AAPL",
+        "price": 150.00,
+        "sector": "Technology"
+    },
+    {
+        "ticker": "GOOGL",
+        "price": 2800.00,
+        "sector": "Technology"
+    },
+    {
+        "ticker": "MSFT",
+        "price": 300.00,
+        "sector": "Technology"
+    },
+    {
+        "ticker": "AMZN",
+        "price": 3300.00,
+        "sector": "Consumer Cyclical"
+    },
+    {
+        "ticker": "TSLA",
+        "price": 700.00,
+        "sector": "Consumer Cyclical"
+    },
+    {
+        "ticker": "FB",
+        "price": 350.00,
+        "sector": "Technology"
+    },
+    {
+        "ticker": "NVDA",
+        "price": 220.00,
+        "sector": "Technology"
+    },
+    {
+        "ticker": "JPM",
+        "price": 160.00,
+        "sector": "Financial Services"
+    },
+    {
+        "ticker": "V",
+        "price": 230.00,
+        "sector": "Financial Services"
+    },
+    {
+        "ticker": "JNJ",
+        "price": 170.00,
+        "sector": "Healthcare"
+    },
+    {
+        "ticker": "UNH",
+        "price": 410.00,
+        "sector": "Healthcare"
+    },
+    {
+        "ticker": "HD",
+        "price": 330.00,
+        "sector": "Consumer Cyclical"
+    },
+    {
+        "ticker": "PG",
+        "price": 140.00,
+        "sector": "Consumer Defensive"
+    },
+    {
+        "ticker": "DIS",
+        "price": 180.00,
+        "sector": "Communication Services"
+    },
+    {
+        "ticker": "MA",
+        "price": 350.00,
+        "sector": "Financial Services"
+    },
+    {
+        "ticker": "PYPL",
+        "price": 280.00,
+        "sector": "Financial Services"
+    },
+    {
+        "ticker": "NFLX",
+        "price": 550.00,
+        "sector": "Communication Services"
+    },
+    {
+        "ticker": "ADBE",
+        "price": 600.00,
+        "sector": "Technology"
+    },
+    {
+        "ticker": "CMCSA",
+        "price": 60.00,
+        "sector": "Communication Services"
+    },
+    {
+        "ticker": "PFE",
+        "price": 45.00,
+        "sector": "Healthcare"
+    },
+    {
+        "ticker": "TCS.NS",
+        "price": 3500.00,
+        "sector": "Technology"
+    },
+    {
+        "ticker": "RELIANCE.NS",
+        "price": 2400.00,
+        "sector": "Energy"
+    },
+    {
+        "ticker": "HDFCBANK.NS",
+        "price": 1500.00,
+        "sector": "Financial Services"
+    },
+    {
+        "ticker": "INFY.NS",
+        "price": 1700.00,
+        "sector": "Technology"
+    },
+    {
+        "ticker": "ICICIBANK.NS",
+        "price": 700.00,
+        "sector": "Financial Services"
+    }
+]

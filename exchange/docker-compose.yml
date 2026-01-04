@@ -1,0 +1,60 @@
+version: "3.8"
+
+services:
+  exchange-engine:
+    build: 
+      context: ./backend
+    container_name: exchange
+    environment:
+      - REDIS_HOST=fintech_redis
+      - REDIS_PORT=6379
+      - KAFKA_BOOTSTRAP_SERVERS=fintech_redpanda:9092
+      - KAFKA_TOPIC_EXECUTION_REPORTS=execution_reports
+      - LOG_LEVEL=INFO
+    networks:
+      - infrastructure_fintech-net
+    volumes:
+      - ./backend:/app
+    restart: always
+    command: python main.py
+
+  exchange-api:
+    build: 
+      context: ./backend
+    container_name: exchange-api
+    command: uvicorn api:app --host 0.0.0.0 --port 8002 --reload
+    environment:
+      - REDIS_HOST=fintech_redis
+      - REDIS_PORT=6379
+    ports:
+      - "8002:8002"
+    networks:
+      - infrastructure_fintech-net
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - exchange-engine
+    restart: always
+
+  exchange-ui:
+    build: 
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: exchange-ui
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./ui:/app
+      - /app/node_modules
+    environment:
+      - VITE_WS_URL=ws://localhost:8002/ws
+    networks:
+      - infrastructure_fintech-net
+    depends_on:
+      - exchange-api
+    restart: always
+
+networks:
+  infrastructure_fintech-net:
+    external: true
+    name: infrastructure_fintech-net

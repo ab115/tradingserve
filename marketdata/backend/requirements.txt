@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+yfinance>=0.2.33
+kafka-python-ng
+pandas
+websockets
+yahooquery>=2.3.7
+redis

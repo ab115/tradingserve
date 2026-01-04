@@ -1,0 +1,383 @@
+:root {
+    --pro-bg: #121212;
+    --pro-panel-bg: #1e1e1e;
+    --pro-border: #333333;
+    --pro-text: #e0e0e0;
+    --pro-text-dim: #a0a0a0;
+    --pro-accent: #ff9800;
+    /* Bloomberg Orange */
+    --pro-success: #00ff00;
+    /* Terminal Green */
+    --pro-danger: #ff0000;
+    /* Terminal Red */
+    --pro-blue: #03a9f4;
+}
+
+.pro-terminal {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    background-color: var(--pro-bg);
+    color: var(--pro-text);
+    font-family: 'Roboto Mono', monospace;
+    /* Monospace is key for bloomberg look */
+    overflow: hidden;
+    font-size: 13px;
+}
+
+/* Header */
+.pro-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 40px;
+    /* Thinner header */
+    background-color: var(--pro-panel-bg);
+    border-bottom: 2px solid var(--pro-border);
+}
+
+.pro-brand {
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--pro-accent);
+}
+
+.pro-controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.pro-stat {
+    font-size: 0.9em;
+    color: var(--pro-text-dim);
+}
+
+.pro-stat span {
+    color: var(--pro-text);
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+/* Main Grid - Switched to Flexbox for better control */
+.pro-grid {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--pro-bg);
+}
+
+.pro-sidebar {
+    background-color: var(--pro-panel-bg);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--pro-border);
+    flex-shrink: 0;
+    /* Prevent sidebars from shrinking */
+}
+
+/* Left Sidebar Width */
+.pro-sidebar:first-child {
+    width: 280px;
+}
+
+/* Right Sidebar Width */
+.pro-sidebar:last-child {
+    width: 320px;
+    border-left: 1px solid var(--pro-border);
+    border-right: none;
+}
+
+/* Main Content (Blotter) */
+.pro-main {
+    flex: 1;
+    /* Take remaining space */
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* Critical for flex child shrinking */
+    overflow: hidden;
+    border-right: 1px solid var(--pro-border);
+    /* Separator */
+}
+
+/* ... Button Styles omitted ... */
+
+/* Enhanced Flash Animations */
+.pro-row-flash {
+    animation: flashRow 0.8s ease-out;
+}
+
+@keyframes flashRowGreen {
+    0% {
+        background-color: rgba(0, 255, 0, 0.6);
+        color: #fff;
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+@keyframes flashRowRed {
+    0% {
+        background-color: rgba(255, 0, 0, 0.6);
+        color: #fff;
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.pro-row-flash-green {
+    animation: flashRowGreen 1.0s ease-out;
+}
+
+.pro-row-flash-red {
+    animation: flashRowRed 1.0s ease-out;
+}
+
+.pro-panel-header {
+    padding: 8px 12px;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    font-weight: 600;
+    background: #252525;
+    border-bottom: 1px solid var(--pro-border);
+}
+
+.strategy-controls {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.control-group label {
+    font-size: 0.8em;
+    color: #aaa;
+    display: flex;
+    justify-content: space-between;
+}
+
+.slider {
+    width: 100%;
+    accent-color: var(--pro-accent);
+}
+
+.ticker-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.ticker-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid #2a2a2a;
+    cursor: pointer;
+}
+
+.ticker-item:hover {
+    background-color: #2a2a2a;
+}
+
+.ticker-symbol {
+    font-weight: bold;
+}
+
+.ticker-price {
+    color: var(--pro-accent);
+}
+
+/* Main Content (Blotter) */
+.pro-main {
+    background-color: var(--pro-bg);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* Critical for Grid shrinking */
+    overflow: hidden;
+}
+
+/* Button Styles */
+.pro-btn {
+    background: transparent;
+    border: 1px solid var(--pro-border);
+    color: var(--pro-text);
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.pro-btn:hover {
+    background: #333;
+}
+
+.pro-btn.danger {
+    border-color: var(--pro-danger);
+    color: var(--pro-danger);
+}
+
+.pro-btn.danger:hover {
+    background: rgba(244, 67, 54, 0.1);
+}
+
+.pro-btn.primary {
+    border-color: var(--pro-accent);
+    color: var(--pro-accent);
+}
+
+/* Pro Blotter Styles (Ag-Grid Overrides) */
+.pro-blotter-container {
+    height: 100%;
+    width: 100%;
+    background-color: var(--pro-bg);
+}
+
+.pro-blotter-container .ag-theme-alpine-dark {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 13px;
+    --ag-background-color: var(--pro-bg);
+    --ag-foreground-color: var(--pro-text);
+    --ag-header-background-color: var(--pro-panel-bg);
+    --ag-row-hover-color: #2c2c2c;
+    --ag-border-color: #333;
+    --ag-header-foreground-color: var(--pro-accent);
+}
+
+.pro-blotter-container .ag-root-wrapper {
+    border: 1px solid var(--pro-border);
+}
+
+.pro-blotter-container .ag-header-cell-text {
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.pro-blotter-container .ag-row {
+    border-bottom: 1px solid #1a1a1a;
+}
+
+/* Flash Animations */
+@keyframes flashGreen {
+    0% {
+        background-color: rgba(0, 255, 0, 0.4);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+@keyframes flashRed {
+    0% {
+        background-color: rgba(255, 0, 0, 0.4);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.cell-flash-green {
+    animation: flashGreen 0.5s ease-out;
+}
+
+.cell-flash-red {
+    animation: flashRed 0.5s ease-out;
+}
+
+.pro-row-flash {
+    animation: flashRow 0.5s ease-out;
+}
+
+@keyframes flashRowGreen {
+    0% {
+        background-color: rgba(0, 255, 0, 0.2);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+@keyframes flashRowRed {
+    0% {
+        background-color: rgba(255, 0, 0, 0.2);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.pro-row-flash-green {
+    animation: flashRowGreen 0.6s ease-out;
+}
+
+.pro-row-flash-red {
+    animation: flashRowRed 0.6s ease-out;
+}
+
+/* Custom Cell Styles */
+.pro-cell-ticker {
+    color: var(--pro-text);
+    font-weight: bold;
+}
+
+.pro-cell-buy {
+    color: var(--pro-success);
+}
+
+.pro-cell-sell {
+    color: var(--pro-danger);
+}
+
+.pro-cell-dim {
+    color: var(--pro-text-dim);
+}
+
+/* Blotter Container specific overrides */
+.pro-main .ag-theme-alpine-dark {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 13px;
+}
+
+.pro-main .ag-theme-alpine-dark .ag-header {
+    background-color: #1a1a1a;
+    border-bottom: 1px solid #333;
+}
+
+.pro-main .ag-theme-alpine-dark .ag-row {
+    background-color: #121212;
+    border-bottom: 1px solid #222;
+}
+
+.pro-main .ag-theme-alpine-dark .ag-cell-value-change-delta-up {
+    color: #4caf50 !important;
+}
+
+.pro-main .ag-theme-alpine-dark .ag-cell-value-change-delta-down {
+    color: #f44336 !important;
+}
+
+.pro-text-green {
+    color: var(--pro-success);
+}
+
+.pro-text-red {
+    color: var(--pro-danger);
+}
