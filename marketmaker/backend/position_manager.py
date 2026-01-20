@@ -5,14 +5,11 @@ from models import Position, PositionUpdate
 from market_data_service import MarketDataService
 
 import os
-
-REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
-REDIS_KEY_TICKERS = 'marketmaker:tickers'
+import config
 
 class PositionManager:
     def __init__(self):
-        self.redis = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+        self.redis = redis.Redis(host=config.REDIS_HOST, port=config.REDIS_PORT, decode_responses=True)
         self.market_service = MarketDataService()
 
     def initialize_positions(self):
@@ -20,7 +17,7 @@ class PositionManager:
         Initializes default positions for all active tickers if not already present.
         """
         # Check if we have the index set
-        if self.redis.exists(REDIS_KEY_TICKERS):
+        if self.redis.exists(config.REDIS_KEY_TICKERS):
             print("Positions already initialized in Redis.")
             return
 
@@ -33,7 +30,7 @@ class PositionManager:
         pipeline = self.redis.pipeline()
         
         # Add all tickers to the set
-        pipeline.sadd(REDIS_KEY_TICKERS, *ticker_names)
+        pipeline.sadd(config.REDIS_KEY_TICKERS, *ticker_names)
         
         for info in tickers_info:
             ticker = info['ticker']
@@ -50,7 +47,8 @@ class PositionManager:
                 "market": market,
                 "avg_price": price,
                 "current_price": price,
-                "pnl": 0.0
+                "pnl": 0.0,
+                "algo_active": "false"  # Default to inactive
             }
             pipeline.hset(key, mapping=mapping)
         
@@ -77,7 +75,7 @@ class PositionManager:
 
     def get_all_positions(self) -> List[Position]:
         # 1. Get all tickers from the set
-        tickers = self.redis.smembers(REDIS_KEY_TICKERS)
+        tickers = self.redis.smembers(config.REDIS_KEY_TICKERS)
         if not tickers:
             return []
             
@@ -105,7 +103,8 @@ class PositionManager:
                         market=data['market'],
                         avg_price=float(data['avg_price']),
                         current_price=float(data.get('current_price', 0.0)),
-                        pnl=float(data.get('pnl', 0.0))
+                        pnl=float(data.get('pnl', 0.0)),
+                        algo_active=str(data.get('algo_active', 'true')).lower() == 'true'
                     ))
                 except Exception as e:
                     # Handle potentially corrupt or partial data gracefully
@@ -150,12 +149,15 @@ class PositionManager:
                     current_price = update.price
                     pnl = (current_price - new_avg) * new_quantity
 
+                    algo_active = data.get('algo_active', 'true') # Preserve existing state
+
                     pipe.multi()
                     mapping = {
                         "quantity": new_quantity,
                         "avg_price": new_avg,
                         "current_price": current_price,
-                        "pnl": pnl
+                        "pnl": pnl,
+                        "algo_active": algo_active
                     }
                     pipe.hset(key, mapping=mapping)
                     pipe.execute()
@@ -208,12 +210,13 @@ class PositionManager:
             "market": position.market,
             "avg_price": position.avg_price,
             "current_price": position.current_price,
-            "pnl": position.pnl
+            "pnl": position.pnl,
+            "algo_active": "true" # Manual add implies active
         }
 
         # Transaction: Add to Set + HSet
         pipeline = self.redis.pipeline()
-        pipeline.sadd(REDIS_KEY_TICKERS, normalized_ticker)
+        pipeline.sadd(config.REDIS_KEY_TICKERS, normalized_ticker)
         pipeline.hset(key, mapping=mapping)
         pipeline.execute()
         
@@ -281,7 +284,7 @@ class PositionManager:
                     pipe.multi()
                     if not data:
                         # If creating new
-                        pipe.sadd(REDIS_KEY_TICKERS, ticker)
+                        pipe.sadd(config.REDIS_KEY_TICKERS, ticker)
                         
                     mapping = {
                         "ticker": ticker,

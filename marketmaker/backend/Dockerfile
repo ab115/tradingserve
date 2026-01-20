@@ -1,19 +1,52 @@
-FROM python:3.11-slim
+# Context: Project Root (../../)
 
+# ====================
+# BASE
+# ====================
+FROM python:3.11-slim as base
 WORKDIR /app
+# Install system deps (lxml supports)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    libxml2-dev \
+    libxslt-dev \
+    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1
 
-# Install dependencies
-COPY requirements.txt .
+# ====================
+# DEV
+# ====================
+FROM base as dev
+COPY marketmaker/backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY packages/py-core /packages/py-core
+RUN pip install -e /packages/py-core
+CMD ["python", "main.py"]
+
+# ====================
+# BUILDER (Prod)
+# ====================
+FROM base as builder
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY marketmaker/backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code
-COPY . .
+# Install shared package (non-editable)
+COPY packages/py-core /packages/py-core
+RUN pip install --no-cache-dir /packages/py-core
 
-# Expose port (default 8001, but can be overridden)
+# ====================
+# PROD
+# ====================
+FROM python:3.11-slim as prod
+WORKDIR /app
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY marketmaker/backend .
+RUN mkdir -p log
 EXPOSE 8001
-
-# Command to run the application
-# We use shell form to allow variable expansion if needed, but array form is properly better.
-# We will use python to run main.py directly or uvicorn. 
-# main.py has uvicorn.run, let's use that but ensure it listens on 0.0.0.0
 CMD ["python", "main.py"]

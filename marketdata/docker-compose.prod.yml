@@ -3,8 +3,8 @@ version: '3.8'
 services:
   marketdata-backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: marketdata/backend/Dockerfile
     container_name: marketdata-backend
     ports:
       - "9001:9001"
@@ -13,6 +13,7 @@ services:
       - PYTHONUNBUFFERED=1
       - REDPANDA_BROKER=fintech_redpanda:9092
       - REDIS_HOST=fintech_redis
+      - PORT=9001
     networks:
       - tradingserver-net
       - fintech_net
@@ -20,8 +21,8 @@ services:
 
   marketdata-ui:
     build:
-      context: ./ui
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: marketdata/ui/Dockerfile
     container_name: marketdata-ui
     ports:
       - "3001:3001"
@@ -33,6 +34,7 @@ services:
       - marketdata-backend
     networks:
       - tradingserver-net
+      - fintech_net
     restart: always
 
   marketdata-proxy:
@@ -56,4 +58,4 @@ networks:
     driver: bridge
   fintech_net:
     external: true
-    name: infrastructure_fintech-net
+    name: tradingserver_backbone_net

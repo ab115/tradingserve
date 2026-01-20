@@ -8,6 +8,7 @@ class Position(BaseModel):
     avg_price: float
     current_price: Optional[float] = 0.0
     pnl: Optional[float] = 0.0
+    algo_active: bool = True
 
 class PositionUpdate(BaseModel):
     ticker: str

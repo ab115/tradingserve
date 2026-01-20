@@ -28,21 +28,32 @@ class RedisStorage:
         self.r.sadd("orders:all", order_id)
 
     def store_session_message(self, session_id: str, message_type: str, message_data: Dict[str, Any]):
-        """Persist session related messages (Logon, Heartbeat, etc)."""
-        # Store in a list for the session
-        key = f"session:{session_id}:messages"
-        data = {
+        """Persist session related messages (Logon, Heartbeat, etc) to Redis Stream."""
+        # Use streams for chronological, scalable storage
+        stream_key = f"stream:session:{session_id}"
+        
+        # Flatten data for Redis Stream (strictly string keys/values usually preferred, but redis-py handles dicts)
+        # We'll dump the complex 'data' dict to a JSON string
+        entry = {
             "type": message_type,
             "session_id": session_id,
-            "data": message_data,
-            "timestamp": message_data.get("SendingTime")
+            "data": json.dumps(message_data),
+            "timestamp": message_data.get("SendingTime") or ""
         }
-        self.r.rpush(key, json.dumps(data))
+        
+        # XADD key * entry
+        # maxlen=10000 ensures we don't run out of memory indefinitely
+        self.r.xadd(stream_key, entry, maxlen=10000, approximate=True)
+        
         # Add to set of known sessions
         self.r.sadd("sessions:all", session_id)
-        # Publish event for real-time UI
-        self.r.publish("updates:sessions", json.dumps(data))
-        # Keep list size manageable if needed, but per requirements "all... messages should be saved"
+        
+        # Publish event for real-time UI (keep this for now)
+        self.r.publish("updates:sessions", json.dumps({
+            "type": message_type, 
+            "session_id": session_id, 
+            "data": message_data
+        }))
 
     def get_order(self, order_id: str) -> Dict[str, Any]:
         return self.r.hgetall(f"order:{order_id}")

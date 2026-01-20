@@ -1,16 +1,19 @@
-FROM node:18-alpine
+# Context: Project Root
+FROM node:20-alpine as base
+FROM nginx:alpine
 
-WORKDIR /app
+# Copy pre-built assets from Host
+COPY marketdata/ui/dist /usr/share/nginx/html/marketdata/
 
-# Install dependencies
-COPY package*.json ./
-RUN npm install
+# Create Nginx Config for SPA Routing
+RUN echo 'server { \
+    listen 80; \
+    location / { \
+        root /usr/share/nginx/html; \
+        index index.html index.htm; \
+        try_files $uri $uri/ /marketdata/index.html; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
 
-# Copy source code
-COPY . .
-
-# Expose the configured port
-EXPOSE 3001
-
-# Run with host flag to allow external access
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3001"]
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

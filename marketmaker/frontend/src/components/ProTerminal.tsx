@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import CustomBlotter from './CustomBlotter';
 import LiveOrders from './LiveOrders';
 import LiveExecutions from './LiveExecutions';
-import { updateStrategyParams, switchStrategy, triggerSweep, toggleQuoting, getControlStatus, connectWebSocket, Position, addTicker } from '../api';
+import { updateStrategyParams, switchStrategy, triggerSweep, toggleQuoting, getControlStatus, Position, addTicker } from '../api';
+import { useStore } from '../state';
 import '../ProTerminal.css';
 
 interface ProTerminalProps {
@@ -20,24 +21,10 @@ const ProTerminal: React.FC<ProTerminalProps> = ({ onSwitchView }) => {
     const [statusMsg, setStatusMsg] = useState("System Ready");
 
     // Data State
-    const [positions, setPositions] = useState<Position[]>([]);
+    const { positions } = useStore();
 
     useEffect(() => {
         getControlStatus().then(res => setQuoting(res.quoting_enabled));
-
-        // Connect to Live Data
-        const ws = connectWebSocket((data: any) => {
-            if (!Array.isArray(data)) return;
-            setPositions(prev => {
-                const rMap = new Map(prev.map(p => [p.ticker, p]));
-                data.forEach((p: Position) => {
-                    p.lastUpdated = Date.now();
-                    rMap.set(p.ticker, p);
-                });
-                return Array.from(rMap.values());
-            });
-        });
-        return () => ws.close();
     }, []);
 
     const handleParamChange = async (newGamma: number, newSigma: number) => {
@@ -73,18 +60,18 @@ const ProTerminal: React.FC<ProTerminalProps> = ({ onSwitchView }) => {
         }
     };
 
-    const handleAddTicker = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            const val = e.currentTarget.value.trim().toUpperCase();
-            if (!val) return;
-            try {
-                setStatusMsg(`Adding ${val}...`);
-                await addTicker(val);
-                e.currentTarget.value = '';
-                setStatusMsg(`${val} Added.`);
-            } catch (err) {
-                setStatusMsg(`Error adding ${val}`);
-            }
+    const [newTicker, setNewTicker] = useState("");
+
+    const submitTicker = async () => {
+        if (!newTicker.trim()) return;
+        const val = newTicker.trim().toUpperCase();
+        try {
+            setStatusMsg(`Adding ${val}...`);
+            await addTicker(val);
+            setNewTicker("");
+            setStatusMsg(`${val} Added.`);
+        } catch (err) {
+            setStatusMsg(`Error adding ${val}`);
         }
     };
 
@@ -174,16 +161,29 @@ const ProTerminal: React.FC<ProTerminalProps> = ({ onSwitchView }) => {
 
                     <div className="pro-panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span>Active Quotes</span>
-                        <input
-                            type="text"
-                            placeholder="+ ADD TICKER"
-                            onKeyDown={handleAddTicker}
-                            style={{
-                                background: '#111', border: '1px solid #444',
-                                color: '#fff', padding: '2px 5px', fontSize: '10px',
-                                textTransform: 'uppercase', width: '80px'
-                            }}
-                        />
+                        <div style={{ display: 'flex', gap: '2px' }}>
+                            <input
+                                type="text"
+                                placeholder="TICKER"
+                                value={newTicker}
+                                onChange={(e) => setNewTicker(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && submitTicker()}
+                                style={{
+                                    background: '#111', border: '1px solid #444',
+                                    color: '#fff', padding: '2px 5px', fontSize: '10px',
+                                    textTransform: 'uppercase', width: '60px'
+                                }}
+                            />
+                            <button
+                                onClick={submitTicker}
+                                style={{
+                                    background: '#222', border: '1px solid #444', color: '#0f0',
+                                    fontSize: '10px', cursor: 'pointer', padding: '0 4px'
+                                }}
+                            >
+                                +
+                            </button>
+                        </div>
                     </div>
                     <div className="ticker-list">
                         {positions.filter(p => p.algo_active).length === 0 && <div style={{ padding: '10px', color: '#666' }}>No active quotes...</div>}

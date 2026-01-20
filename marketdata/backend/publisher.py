@@ -8,28 +8,34 @@ logger = logging.getLogger("Publisher")
 
 class MarketDataPublisher:
     def __init__(self):
-        # Initialize Kafka (Redpanda)
         self.kafka_producer = None
-        try:
-            self.kafka_producer = KafkaProducer(
-                bootstrap_servers=REDPANDA_BROKER,
-                value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-                key_serializer=lambda k: k.encode('utf-8'),
-                api_version=(2, 0, 2)
-            )
-            logger.info(f"Connected to Redpanda at {REDPANDA_BROKER}")
-        except Exception as e:
-            logger.error(f"Failed to connect to Redpanda: {e}")
+        self.redis_client = None
+
+    def connect(self):
+        # Initialize Kafka (Redpanda)
+        if not self.kafka_producer:
+            try:
+                self.kafka_producer = KafkaProducer(
+                    bootstrap_servers=REDPANDA_BROKER,
+                    value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+                    key_serializer=lambda k: k.encode('utf-8'),
+                    api_version=(2, 0, 2),
+                    api_version_auto_timeout_ms=3000, # Fail fast (3s)
+                    request_timeout_ms=3000
+                )
+                logger.info(f"Connected to Redpanda at {REDPANDA_BROKER}")
+            except Exception as e:
+                logger.error(f"Failed to connect to Redpanda: {e}")
 
         # Initialize Redis
-        self.redis_client = None
-        try:
-            self.redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
-            self.redis_client.ping()
-            logger.info(f"Connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
-        except Exception as e:
-            logger.error(f"Failed to connect to Redis: {e}")
-            self.redis_client = None
+        if not self.redis_client:
+            try:
+                self.redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
+                self.redis_client.ping()
+                logger.info(f"Connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
+            except Exception as e:
+                logger.error(f"Failed to connect to Redis: {e}")
+                self.redis_client = None
 
     def publish(self, data: list):
         # 1. Publish to Redpanda (Streaming)
@@ -63,7 +69,10 @@ class MarketDataPublisher:
                             "source": str(update.get("source"))
                         })
                         # Also publish to PubSub channel for real-time subscribers
+                        # 1. Global Channel
                         pipe.publish(f"market_data_updates", json.dumps(update))
+                        # 2. Ticker Channel (Optimization)
+                        pipe.publish(f"market_data_updates:{ticker}", json.dumps(update))
                 pipe.execute()
             except Exception as e:
                 logger.error(f"Error publishing to Redis: {e}")

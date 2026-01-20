@@ -1,16 +1,19 @@
-FROM node:18-alpine
+FROM nginx:alpine
 
-WORKDIR /app
+# Copy pre-built assets from Host (Context is Project Root)
+# We copy into a subdirectory to support subpath routing (e.g. /exchange/)
+COPY exchange/ui/dist /usr/share/nginx/html/exchange/
 
-# Install dependencies
-COPY package*.json ./
-RUN npm install
+# Create Nginx Config for SPA Routing
+# Falls back to /exchange/index.html for client-side routing
+RUN echo 'server { \
+    listen 80; \
+    location / { \
+        root /usr/share/nginx/html; \
+        index index.html index.htm; \
+        try_files $uri $uri/ /exchange/index.html; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
 
-# Copy source code
-COPY . .
-
-# Expose the configured port
-EXPOSE 3003
-
-# Run with host flag to allow external access
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3003"]
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

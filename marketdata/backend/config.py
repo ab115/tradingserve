@@ -6,7 +6,7 @@ MARKET_DATA_TOPIC = "market_data"
 
 
 # Service Configuration
-UPDATE_INTERVAL_SECONDS = 1  # Faster updates for simulation
+UPDATE_INTERVAL_SECONDS = 0.2  # Faster updates for simulation
 BATCH_SIZE = 50 # Larger batch for simulation
 
 # Market Data Mode

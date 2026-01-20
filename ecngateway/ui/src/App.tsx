@@ -182,9 +182,8 @@ function App() {
         if (!confirm("Are you sure you want to CLEAR ALL DATA? This cannot be undone.")) return;
 
         try {
-            const protocol = window.location.protocol;
-            const host = window.location.hostname;
-            const apiBase = `${protocol}//${host}:8000`;
+            // Use relative path via Nginx
+            const apiBase = `/ecn/api`;
 
             await fetch(`${apiBase}/reset`, { method: "POST" });
             console.log("Reset command sent.");
@@ -198,9 +197,8 @@ function App() {
     // Initial Fetch
     useEffect(() => {
         const fetchData = async () => {
-            const protocol = window.location.protocol;
-            const host = window.location.hostname;
-            const apiBase = `${protocol}//${host}:8000`;
+            // Use relative path via Nginx
+            const apiBase = `/ecn/api`;
 
             try {
                 const sRes = await fetch(`${apiBase}/sessions`)
@@ -225,8 +223,8 @@ function App() {
         fetchData()
 
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = window.location.hostname;
-        const wsUrl = `${wsProtocol}//${wsHost}:8000/ws`;
+        // Construct absolute WS URL relative to current host
+        const wsUrl = `${wsProtocol}//${window.location.host}/ecn/ws`;
 
         const ws = new WebSocket(wsUrl)
         ws.onopen = () => setStatus("Live (WS)")

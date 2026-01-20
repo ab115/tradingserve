@@ -1,0 +1,286 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # INFRASTRUCTURE
+  # ==========================================
+  fintech_redis:
+    image: redis:alpine
+    container_name: fintech_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - fintech_net
+
+  fintech_redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.2.14
+    container_name: fintech_redpanda
+    ports:
+      - "9092:9092"
+      - "19092:19092"
+      - "9644:9644"
+    command:
+      - redpanda
+      - start
+      - --smp 1
+      - --memory 1G
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://fintech_redpanda:9092,external://localhost:19092
+    networks:
+      - fintech_net
+
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:latest
+    container_name: fintech_console
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_BROKERS: fintech_redpanda:9092
+    depends_on:
+      - fintech_redpanda
+    networks:
+      - fintech_net
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: fintech_redis_ui
+    environment:
+      - REDIS_HOSTS=local:fintech_redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - fintech_redis
+    networks:
+      - fintech_net
+
+  fintech_haproxy:
+    image: haproxy:2.8
+    container_name: fintech_haproxy
+    ports:
+      - "9898:9898" # FIX
+      - "8404:8404" # Stats
+    volumes:
+      - ./infrastructure/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - fintech_net
+    depends_on:
+      - fintech_redis
+
+  fintech_portal:
+    image: nginx:alpine
+    container_name: fintech_portal
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/landing:/usr/share/nginx/html:ro
+    depends_on:
+      - ecn-ui
+      - exchange-ui
+      - marketdata-ui
+      - marketmaker-ui
+    networks:
+      - fintech_net
+
+  # ==========================================
+  # ECN GATEWAY
+  # ==========================================
+  ecn-fix-server:
+    build:
+      context: .
+      dockerfile: ecngateway/backend/Dockerfile
+      target: dev
+    container_name: ecngateway
+    environment:
+      - REDIS_HOST=fintech_redis
+      - REDIS_PORT=6379
+      - KAFKA_BOOTSTRAP_SERVERS=fintech_redpanda:9092
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./ecngateway/backend:/app
+      - ./packages/py-core:/packages/py-core
+      - ./ecngateway/backend/log:/app/log
+      - ./ecngateway/backend/store:/app/store
+    networks:
+      - fintech_net
+    command: ["python", "main.py"]
+
+  ecn-api:
+    build:
+      context: .
+      dockerfile: ecngateway/backend/Dockerfile
+      target: dev
+    container_name: ecn-api
+    environment:
+      - REDIS_HOST=fintech_redis
+      - REDIS_PORT=6379
+      - KAFKA_BOOTSTRAP_SERVERS=fintech_redpanda:9092
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./ecngateway/backend:/app
+      - ./packages/py-core:/packages/py-core
+    ports:
+      - "8000:8000"
+    networks:
+      - fintech_net
+    command: ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  ecn-ui:
+    build:
+      context: .
+      dockerfile: ecngateway/ui/Dockerfile
+      target: dev
+    container_name: ecn-ui
+    environment:
+      - VITE_API_URL=/ecn/api
+    volumes:
+      - ./ecngateway/ui:/app
+      - /app/node_modules
+    ports:
+      - "3005:3000"
+    networks:
+      - fintech_net
+
+  # ==========================================
+  # EXCHANGE
+  # ==========================================
+  exchange-engine:
+    build:
+      context: .
+      dockerfile: exchange/backend/Dockerfile
+      target: dev
+    container_name: exchange
+    environment:
+      - REDIS_HOST=fintech_redis
+      - REDIS_PORT=6379
+      - KAFKA_BOOTSTRAP_SERVERS=fintech_redpanda:9092
+      - KAFKA_TOPIC_EXECUTION_REPORTS=execution_reports
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./exchange/backend:/app
+      - ./packages/py-core:/packages/py-core
+      - ./exchange/backend/log:/app/log
+    networks:
+      - fintech_net
+    command: ["python", "main.py"]
+
+  exchange-api:
+    build:
+      context: .
+      dockerfile: exchange/backend/Dockerfile
+      target: dev
+    container_name: exchange-api
+    environment:
+      - REDIS_HOST=fintech_redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./exchange/backend:/app
+      - ./packages/py-core:/packages/py-core
+    ports:
+      - "8002:8002"
+    networks:
+      - fintech_net
+    command: ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
+
+  exchange-ui:
+    build:
+      context: .
+      dockerfile: exchange/ui/Dockerfile
+      target: dev
+    container_name: exchange-ui
+    environment:
+      - VITE_API_URL=/exchange/api
+      - VITE_WS_URL=ws://localhost/exchange/ws # Use Host for WS in Dev? Or Portal? Portal.
+    volumes:
+      - ./exchange/ui:/app/exchange/ui
+      - ./packages/ui-core:/packages/ui-core
+      - /app/exchange/ui/node_modules
+    ports:
+      - "3003:3003"
+    networks:
+      - fintech_net
+
+  # ==========================================
+  # MARKET DATA
+  # ==========================================
+  marketdata-backend:
+    build:
+      context: .
+      dockerfile: marketdata/backend/Dockerfile
+      target: dev
+    container_name: marketdata-backend
+    environment:
+      - REDPANDA_BROKER=fintech_redpanda:9092
+      - REDIS_HOST=fintech_redis
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./marketdata/backend:/app
+      - ./packages/py-core:/packages/py-core
+    ports:
+      - "9001:9001"
+    networks:
+      - fintech_net
+    command: ["python", "main.py"]
+
+  marketdata-ui:
+    build:
+      context: .
+      dockerfile: marketdata/ui/Dockerfile
+      target: dev
+    container_name: marketdata-ui
+    environment:
+      - VITE_API_URL=/marketdata/api
+    volumes:
+      - ./marketdata/ui:/app
+      - /app/node_modules
+    ports:
+      - "3001:3000"
+    networks:
+      - fintech_net
+
+  # ==========================================
+  # MARKET MAKER
+  # ==========================================
+  marketmaker-backend:
+    build:
+      context: .
+      dockerfile: marketmaker/backend/Dockerfile
+      target: dev
+    container_name: marketmaker-backend
+    environment:
+      - REDIS_HOST=fintech_redis
+      - REDIS_PORT=6379
+      - PORT=8001
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./marketmaker/backend:/app
+      - ./packages/py-core:/packages/py-core
+    ports:
+      - "9000:8001"
+    networks:
+      - fintech_net
+    command: ["python", "main.py"]
+
+  marketmaker-ui:
+    build:
+      context: .
+      dockerfile: marketmaker/frontend/Dockerfile
+      target: dev
+    container_name: marketmaker-ui
+    environment:
+      - BACKEND_URL=http://localhost:9000
+      - BACKEND_WS_URL=ws://localhost/exchange/ws # Wait this might be tricky.
+    volumes:
+      - ./marketmaker/frontend:/app
+      - /app/node_modules
+    ports:
+      - "3002:3002"
+    networks:
+      - fintech_net
+
+networks:
+  fintech_net:
+    name: tradingserver_backbone_net
+    driver: bridge

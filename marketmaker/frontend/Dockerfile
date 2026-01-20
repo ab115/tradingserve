@@ -1,16 +1,17 @@
-FROM node:18-alpine
+FROM nginx:alpine
 
-WORKDIR /app
+# Copy pre-built assets from Host
+COPY marketmaker/frontend/dist /usr/share/nginx/html/marketmaker/
 
-# Install dependencies
-COPY package*.json ./
-RUN npm install
+# Create Nginx Config for SPA Routing
+RUN echo 'server { \
+    listen 80; \
+    location / { \
+        root /usr/share/nginx/html; \
+        index index.html index.htm; \
+        try_files $uri $uri/ /marketmaker/index.html; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
 
-# Copy source code
-COPY . .
-
-# Expose port (default 3002, but can be overridden via command)
-EXPOSE 3002
-
-# Run with host flag to allow external access
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3002"]
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

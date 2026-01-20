@@ -3,8 +3,8 @@ version: '3.8'
 services:
   marketmaker-backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: marketmaker/backend/Dockerfile
     container_name: marketmaker-backend
     ports:
       - "9000:8001"
@@ -14,6 +14,8 @@ services:
       - PYTHONUNBUFFERED=1
       - REDIS_HOST=fintech_redis
       - REDIS_PORT=6379
+      - ECN_HOST=ecngateway
+      - ECN_PORT=9898
       - PORT=8001
     networks:
       - tradingserver-net
@@ -21,14 +23,15 @@ services:
 
   marketmaker-ui:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: marketmaker/frontend/Dockerfile
     container_name: marketmaker-ui
     ports:
       - "3002:3002"
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./frontend:/src/marketmaker/frontend
+      - ../packages/ui-core:/src/packages/ui-core
+      - /src/marketmaker/frontend/node_modules
     environment:
       - BACKEND_URL=http://marketmaker-backend:8001
       - BACKEND_WS_URL=ws://marketmaker-backend:8001
@@ -42,4 +45,4 @@ networks:
     driver: bridge
   fintech_net:
     external: true
-    name: infrastructure_fintech-net
+    name: tradingserver_backbone_net

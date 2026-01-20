@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # ECN Gateway Scaling
+  # Requires HAProxy Sticky Sessions (configured in infrastructure/haproxy)
+  ecn-fix-server:
+    deploy:
+      mode: replicated
+      replicas: 3
+      endpoint_mode: dnsrr
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+      update_config:
+        parallelism: 1
+        delay: 10s
+
+  ecn-api:
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # Exchange Scaling
+  exchange-api:
+    deploy:
+      mode: replicated
+      replicas: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+  # Market Maker Scaling
+  marketmaker-backend:
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M

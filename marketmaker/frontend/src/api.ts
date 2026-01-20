@@ -17,11 +17,10 @@ export interface PositionUpdate {
     price: number;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
-const WS_URL = (() => {
-    if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL;
+export const API_URL = '/marketmaker/api';
+export const WS_URL = (() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${window.location.host}`;
+    return `${protocol}//${window.location.host}/marketmaker`;
 })();
 
 export const getPositions = async (): Promise<Position[]> => {

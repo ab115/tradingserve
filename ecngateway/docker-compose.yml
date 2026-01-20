@@ -3,13 +3,13 @@ version: '3.8'
 services:
   ecn-fix-server:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: ecngateway/backend/Dockerfile
     container_name: ecngateway
-    ports:
-      - "9898:9898"
+    # ports:
+    #   - "9898:9898" # Exposed via HAProxy
     environment:
-      - REDIS_HOST=host.docker.internal
+      - REDIS_HOST=fintech_redis
       - REDIS_PORT=6379
       - KAFKA_BOOTSTRAP_SERVERS=fintech_redpanda:9092
       # Assuming Redpanda/Kafka is running on host port 9092.
@@ -38,13 +38,15 @@ services:
       - default
 
   ecn-api:
-    build: ./backend
+    build:
+      context: ../
+      dockerfile: ecngateway/backend/Dockerfile
     container_name: ecn-api
     command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
     environment:
-      - REDIS_HOST=host.docker.internal
+      - REDIS_HOST=fintech_redis
       - REDIS_PORT=6379
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -52,8 +54,9 @@ services:
       - ./backend:/app
     networks:
       - default
+      - fintech_net
 
 networks:
   fintech_net:
     external: true
-    name: infrastructure_fintech-net
+    name: tradingserver_backbone_net

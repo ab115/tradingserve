@@ -1,0 +1,26 @@
+# Ignore Git
+.git
+.gitignore
+
+# Ignore Dependencies (they are installed inside image)
+**/node_modules
+**/venv
+**/.venv
+**/env
+
+# Ignore Build Artifacts
+# **/dist
+**/build
+**/__pycache__
+**/*.pyc
+
+# Ignore Data/Logs
+**/store
+**/log
+**/logs
+**/*.db
+**/*.log
+
+# Ignore IDE settings
+.vscode
+.idea

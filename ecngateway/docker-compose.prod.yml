@@ -3,11 +3,11 @@ version: '3.8'
 services:
   ecn-fix-server:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: ecngateway/backend/Dockerfile
     container_name: ecngateway
-    ports:
-      - "9898:9898"
+    # ports:
+    #   - "9898:9898" # Exposed via HAProxy
     environment:
       - REDIS_HOST=host.docker.internal
       - REDIS_PORT=6379
@@ -26,18 +26,21 @@ services:
 
   ecn-ui:
     build:
-      context: ./ui
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: ecngateway/ui/Dockerfile
     container_name: ecn-ui
     # volumes: removed for production
     ports:
       - "3005:3000"
     networks:
       - default
+      - fintech_net
     restart: always
 
   ecn-api:
-    build: ./backend
+    build: 
+      context: ../
+      dockerfile: ecngateway/backend/Dockerfile
     container_name: ecn-api
     command: uvicorn api:app --host 0.0.0.0 --port 8000
     ports:
@@ -50,9 +53,10 @@ services:
     # volumes: removed for production
     networks:
       - default
+      - fintech_net
     restart: always
 
 networks:
   fintech_net:
     external: true
-    name: infrastructure_fintech-net
+    name: tradingserver_backbone_net

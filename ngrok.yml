@@ -1,0 +1,23 @@
+version: "2"
+authtoken: <YOUR_AUTH_TOKEN> # Run 'ngrok config add-authtoken <TOKEN>' first if needed
+
+tunnels:
+  portal:
+    proto: http
+    addr: 80
+  
+  exchange:
+    proto: http
+    addr: 3003
+    
+  marketmaker:
+    proto: http
+    addr: 3002
+    
+  marketdata:
+    proto: http
+    addr: 3001
+    
+  ecngateway:
+    proto: http
+    addr: 3005

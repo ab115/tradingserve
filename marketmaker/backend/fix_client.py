@@ -215,8 +215,13 @@ class FIXClient:
         with self.lock:
             self._send_fix_msg_unsafe(msg_type, fields)
 
+    @property
+    def is_connected(self):
+        return self.sock is not None
+
     def _send_fix_msg_unsafe(self, msg_type: str, fields: dict):
         if not self.sock:
+            logger.warning(f"Drafting Message {msg_type} but Socket is DISCONNECTED. Dropping.")
             return
 
         # 1. Standard Header
@@ -335,6 +340,7 @@ class FIXClient:
                     })
                 except: pass
 
+
     def _heartbeat_loop(self):
         while self.running:
             time.sleep(30)
@@ -342,3 +348,45 @@ class FIXClient:
                 self.send_heartbeat()
             except:
                 pass
+
+    def send_aggressive_order(self, ticker: str, side: str, price: float, qty: int, ref_id: str = None):
+        """
+        Sends an order explicitly designed to TAKE liquidity (Sweep).
+        Does NOT track in active_orders state (Fire and Forget).
+        """
+        cl_ord_id = f"SWEEP-{ref_id or int(time.time()*1000)}"
+        side_val = "1" if side == "Buy" else "2"
+        
+        # Handle Price=None or 0 -> treat as Market Order?
+        # Safe bet: If price provided, use Limit. If 0, use Market?
+        # User requirement: Fill Open Orders.
+        # If open order is set at Price P, we send Limit at P.
+        
+        logger.info(f"SWEEP: Sending {side} {qty} {ticker} @ {price} (ID: {cl_ord_id})")
+        
+        msg_type = "D"
+        fields = {
+            "11": cl_ord_id,
+            "21": "1",
+            "55": ticker,
+            "54": side_val,
+            "38": qty,
+            "60": datetime.utcnow().strftime('%Y%m%d-%H:%M:%S')
+        }
+        
+        if price and price > 0:
+            fields["40"] = "2" # Limit
+            fields["44"] = price
+        else:
+            fields["40"] = "1" # Market
+            
+        fields["59"] = "3" # TimeInForce = IOC (Immediate or Cancel)
+        
+        self._send_fix_msg(msg_type, fields)
+        if self.on_activity:
+            try:
+                self.on_activity("ORDER_SENT", {
+                    "symbol": ticker, "side": side, "type": "SWEEP", "qty": qty, "price": price,
+                    "timestamp": time.time()
+                })
+            except: pass

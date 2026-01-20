@@ -1,19 +1,50 @@
-FROM python:3.10-slim
+# Context: Project Root (../../)
 
+# ====================
+# BASE
+# ====================
+FROM python:3.11-slim as base
 WORKDIR /app
+# Install system deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1
 
-# Install system dependencies for networking debugging
-RUN apt-get update && apt-get install -y curl iputils-ping
+# ====================
+# DEV
+# ====================
+FROM base as dev
+COPY marketdata/backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY packages/py-core /packages/py-core
+RUN pip install -e /packages/py-core
+CMD ["python", "main.py"]
 
-# Install dependencies
-COPY requirements.txt .
+# ====================
+# BUILDER (Prod)
+# ====================
+FROM base as builder
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY marketdata/backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code
-COPY . .
+# Install shared package (non-editable)
+COPY packages/py-core /packages/py-core
+RUN pip install --no-cache-dir /packages/py-core
 
-# Expose the port
+# ====================
+# PROD
+# ====================
+FROM python:3.11-slim as prod
+WORKDIR /app
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY marketdata/backend .
+RUN mkdir -p log
 EXPOSE 9001
-
-# Run the application
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9001", "--reload", "--proxy-headers", "--forwarded-allow-ips", "*"]
+CMD ["python", "main.py"]

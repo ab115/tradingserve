@@ -1,5 +1,7 @@
 import asyncio
 import json
+import os
+import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
@@ -10,12 +12,21 @@ from publisher import MarketDataPublisher
 from config import BATCH_SIZE, UPDATE_INTERVAL_SECONDS
 
 # Globals
+print("Initializing MarketDataProvider...", flush=True)
 provider = MarketDataProvider()
+print("Initializing MarketDataPublisher...", flush=True)
 publisher = MarketDataPublisher()
+print("Publisher Initialized.", flush=True)
+
 active_websockets: List[WebSocket] = []
 
 async def fetch_and_publish_loop():
     print("Starting Market Data Loop...")
+    # Connect Publisher (Background)
+    try:
+        publisher.connect()
+    except: pass
+    
     all_tickers = provider.get_tickers()
     total_tickers = len(all_tickers)
     cursor = 0
@@ -41,9 +52,7 @@ async def fetch_and_publish_loop():
             updates = await provider.fetch_prices_async(batch)
             
             if updates:
-                # 1. Publish to Redpanda
                 # 1. Publish to Redpanda (Offloaded to thread to avoid blocking loop)
-                # This prevents 'flush()' in publisher from stalling WebSockets
                 loop = asyncio.get_event_loop()
                 await loop.run_in_executor(None, publisher.publish, updates)
                 
@@ -143,3 +152,14 @@ def health():
 @app.get("/")
 def root():
     return {"message": "Market Data Backend Running", "endpoints": ["/ws/marketdata", "/ws/news/{ticker}", "/ws/sector/{ticker}"]}
+
+if __name__ == "__main__":
+    try:
+        print("Starting Uvicorn...", flush=True)
+        # Port 9001 to match Docker Compose mapping
+        port = int(os.getenv("PORT", 9001))
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    except Exception as e:
+        print(f"Uvicorn Crashed: {e}", flush=True)
+        import traceback
+        traceback.print_exc()

@@ -2,6 +2,7 @@ export interface OrderBookLevel {
     price: number;
     qty: number;
     total: number;
+    entity?: string;
 }
 
 export interface Trade {

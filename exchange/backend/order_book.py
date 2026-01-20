@@ -155,3 +155,68 @@ class OrderBook:
             "symbol": self.symbol,
             "orders": active_orders
         }
+
+    def get_aggregated_book(self, depth: int = 20) -> dict:
+        """
+        Returns the Order Book aggregated by price levels.
+        Used for efficient Market Data broadcasting.
+        """
+        # Aggregate Bids
+        # Key: (price, sender_comp_id)
+        bid_levels = {}
+        for neg_price, _, order in self.bids:
+            price = -neg_price
+            qty = order.qty
+            entity = order.sender_comp_id or "Anonymous"
+            key = (price, entity)
+            
+            if key not in bid_levels:
+                bid_levels[key] = 0
+            bid_levels[key] += qty
+            
+        # Sort Bids (High to Low Price)
+        # We need to sort by Price Descending. Secondary sort? Maybe Entity name?
+        sorted_keys = sorted(bid_levels.keys(), key=lambda x: (x[0], x[1]), reverse=True) 
+        # Note: sort key (x[0], x[1]) with reverse=True sorts Price DESC, then Entity DESC.
+        
+        sorted_bids = []
+        # Take top N *levels* (combinations)
+        for price, entity in sorted_keys[:depth]:
+            sorted_bids.append({
+                "price": price, 
+                "qty": bid_levels[(price, entity)], 
+                "total": 0,
+                "entity": entity
+            })
+            
+        # Aggregate Asks
+        ask_levels = {}
+        for price, _, order in self.asks:
+            qty = order.qty
+            entity = order.sender_comp_id or "Anonymous"
+            key = (price, entity)
+            
+            if key not in ask_levels:
+                ask_levels[key] = 0
+            ask_levels[key] += qty
+            
+        # Sort Asks (Low to High Price)
+        # Reverse=False. Sorts Price ASC, Entity ASC.
+        sorted_keys_asks = sorted(ask_levels.keys(), key=lambda x: (x[0], x[1]))
+        
+        sorted_asks = []
+        for price, entity in sorted_keys_asks[:depth]:
+            sorted_asks.append({
+                "price": price, 
+                "qty": ask_levels[(price, entity)], 
+                "total": 0,
+                "entity": entity
+            })
+
+        return {
+            "type": "BOOK_SNAPSHOT",
+            "symbol": self.symbol,
+            "bids": sorted_bids,
+            "asks": sorted_asks,
+            # We can optionally include last_price if we tracked it, but API fetches it from Redis separately
+        }

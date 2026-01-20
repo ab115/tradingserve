@@ -1,0 +1,26 @@
+{
+    "name": "@tradingserver/ui-core",
+    "version": "0.1.0",
+    "private": true,
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    },
+    "peerDependencies": {
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+    },
+    "dependencies": {
+        "react-virtuoso": "^4.6.2",
+        "zustand": "^4.4.7",
+        "clsx": "^2.0.0",
+        "tailwind-merge": "^2.0.0"
+    },
+    "devDependencies": {
+        "@types/react": "^18.2.15",
+        "@types/react-dom": "^18.2.7",
+        "typescript": "^5.0.2"
+    }
+}

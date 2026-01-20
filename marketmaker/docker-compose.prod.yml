@@ -3,8 +3,8 @@ version: '3.8'
 services:
   marketmaker-backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: marketmaker/backend/Dockerfile
     container_name: marketmaker-backend
     ports:
       - "9000:8001"
@@ -21,8 +21,8 @@ services:
 
   marketmaker-ui:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: marketmaker/frontend/Dockerfile
     container_name: marketmaker-ui
     ports:
       - "3002:3002"
@@ -30,10 +30,14 @@ services:
     environment:
       - BACKEND_URL=http://marketmaker-backend:8001
       - BACKEND_WS_URL=ws://marketmaker-backend:8001
+      - VITE_API_URL=/marketmaker/api
+      # VITE_WS_URL can be auto-detected or explicitly set if needed. 
+      # api.ts logic handles relative WS if VITE_WS_URL is missing.
     depends_on:
       - marketmaker-backend
     networks:
       - tradingserver-net
+      - fintech_net
     restart: always
 
 networks:
@@ -41,4 +45,4 @@ networks:
     driver: bridge
   fintech_net:
     external: true
-    name: infrastructure_fintech-net
+    name: tradingserver_backbone_net

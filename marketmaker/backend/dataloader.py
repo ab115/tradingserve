@@ -5,16 +5,13 @@ import asyncio
 import json
 from models import Position
 from market_data_service import MarketDataService
-
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
-REDIS_KEY_TICKERS = 'marketmaker:tickers'
+import config
 
 async def load_data():
     print("Initializing Data Loader...")
     
     # 1. Setup Redis and Service
-    r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+    r = redis.Redis(host=config.REDIS_HOST, port=config.REDIS_PORT, decode_responses=True)
     market_service = MarketDataService()
     
     # 2. Find CSVs in resources/
@@ -60,13 +57,10 @@ async def load_data():
     
     # Prepare Redis Pipeline
     pipeline = r.pipeline()
-    # Reset the index set? Optional. The user said "initial positions", implies flushing or overwriting.
-    # Let's clear the index set to be sure we only have what's in the CSVs, OR just add to it.
-    # To be safe and "reset" state as per request:
-    r.delete(REDIS_KEY_TICKERS) 
+    r.delete(config.REDIS_KEY_TICKERS) 
     
     # Add all tickers to index
-    pipeline.sadd(REDIS_KEY_TICKERS, *all_tickers)
+    pipeline.sadd(config.REDIS_KEY_TICKERS, *all_tickers)
     
     for i in range(0, len(all_tickers), CHUNK_SIZE):
         chunk = all_tickers[i:i + CHUNK_SIZE]

@@ -23,57 +23,38 @@ class MatchingEngine:
         self.market_prices[symbol] = price
         # Could trigger Stop orders here
 
-    def process_order(self, order: Order):
+    async def process_order(self, order: Order):
         book = self.get_order_book(order.symbol)
         
         if order.status == 'New':
              # Publish "New Order" event for UI/OrderBook
-             # Convert order to dict. Pydantic .dict()
-             self.producer.publish_order_update(order.dict())
+             await self.producer.publish_order_update(order.dict())
 
         # 1. Match
         trades, cancelled_orders = book.add_order(order)
         
         # 2. Process Trades (Execution Reports)
         for maker, taker, qty, price in trades:
-            self._handle_trade(maker, taker, qty, price)
+            await self._handle_trade(maker, taker, qty, price)
 
         # 2b. Process Self-Match Cancellations
         for cancelled_order in cancelled_orders:
              logger.info(f"Self-match prevention triggered for {cancelled_order.id}")
-             self._send_cancel(cancelled_order, "Self-Match Prevention")
+             await self._send_cancel(cancelled_order, "Self-Match Prevention")
             
         # 3. Publish Snapshot (Persistence)
-        # For high-frequency, we wouldn't do this *every* order, but for this demo/MVP it ensures consistent state.
-        self._publish_snapshot(book)
+        await self._publish_snapshot(book)
             
         # 3. Process Taker Rest (if Limit and not fully filled)
-        # If it was a Market order and not fully filled, the remainder was killed by OrderBook logic
-        # But we need to report the New/Open status for the resting portion?
-        # The OrderBook updates the objects directly.
         
         # Check Taker Status after matching
         if order.status == 'New':
-             # If it wasn't rejected immediately and had some matches or resting
              pass
         
-        # If Limit order rests in book (partially or fully open), we might want to send 'New' report if not already sent?
-        # Typically:
-        # - Send 'New' (Ack) immediately upon receipt? Or after matching?
-        # - If immediate Match, send 'PartialFill' or 'Fill'.
-        # - If resting, send 'New'.
-        
-        # Let's simple approach:
-        # Acknowledge Receipt
-        # self._send_ack(order) # Maybe assume Gateway did this? ECnGateway usually sends 'PendingNew' then 'New'.
-        # Here we are the venue. We should confirm 'New'.
-        
-        # NOTE: If the order was a Market order and has remainder, it is effectively Dead for the remainder.
-        # Required to send 'Expired' or 'Cancelled' for remainder?
         if order.type == '1' and order.qty > 0:
-             self._send_cancel(order, "Market Order Partial Fill / No Liquidity")
+             await self._send_cancel(order, "Market Order Partial Fill / No Liquidity")
 
-    def reset(self):
+    async def reset(self):
         """Clears all order books and state."""
         logger.info("Resetting Matching Engine State...")
         symbols = list(self.order_books.keys())
@@ -83,25 +64,30 @@ class MatchingEngine:
         for symbol in symbols:
             # Create fresh empty book
             empty_book = OrderBook(symbol)
-            self._publish_snapshot(empty_book)
+            await self._publish_snapshot(empty_book)
             
             # Also clear the trade history list in Redis
             try:
-                self.producer.redis.delete(f"exchange:trades:{symbol}")
+                await self.producer.redis.delete(f"exchange:trades:{symbol}")
             except Exception as e:
                 logger.error(f"Failed to clear trade history for {symbol}: {e}")
 
-    def _publish_snapshot(self, book: OrderBook):
-        snapshot = book.to_dict()
-        self.producer.publish_snapshot(snapshot)
+    async def _publish_snapshot(self, book: OrderBook):
+        # Use Aggregated Book for Broadcasting
+        snapshot = book.get_aggregated_book()
+        await self.producer.publish_book_snapshot(snapshot)
+        
+        # Persistence
+        full_state = book.to_dict()
+        await self.producer.publish_snapshot(full_state)
 
-    def _handle_trade(self, maker: Order, taker: Order, qty: int, price: float):
+    async def _handle_trade(self, maker: Order, taker: Order, qty: int, price: float):
         match_id = str(uuid.uuid4())
         timestamp = datetime.utcnow().isoformat()
         
         # Maker Report
         maker.cum_qty += qty
-        maker_leaves = maker.qty # Already updated in book
+        maker_leaves = maker.qty 
         maker_status = 'Filled' if maker_leaves == 0 else 'PartiallyFilled'
         
         maker_report = ExecutionReport(
@@ -115,14 +101,13 @@ class MatchingEngine:
             LeavesQty=maker_leaves,
             LastQty=qty,
             CumQty=maker.cum_qty,
-            AvgPx=price, # Simplified: AvgPx for this fill? Or total? FIX says AvgPx of *total* fills. 
-                         # For MVP, let's use current fill price or we need to track total cost.
+            AvgPx=price, 
             TargetCompID=maker.sender_comp_id,
             SenderCompID="ECNGATEWAY",
             TransactTime=timestamp,
             ContraParty=taker.sender_comp_id
         )
-        self.producer.publish_execution_report(maker_report)
+        await self.producer.publish_execution_report(maker_report)
         
         # Taker Report
         taker.cum_qty += qty
@@ -146,11 +131,11 @@ class MatchingEngine:
             TransactTime=timestamp,
             ContraParty=maker.sender_comp_id
         )
-        self.producer.publish_execution_report(taker_report)
+        await self.producer.publish_execution_report(taker_report)
         
         # Publish Market Data (Last Price)
         self.update_market_price(maker.symbol, price)
-        self.producer.publish_market_data(maker.symbol, price)
+        await self.producer.publish_market_data(maker.symbol, price)
 
         # Publish Trade History (Persistence)
         trade_data = {
@@ -163,11 +148,11 @@ class MatchingEngine:
             "seller": taker.sender_comp_id if taker.side == "Sell" else maker.sender_comp_id,
             "taker_side": taker.side
         }
-        self.producer.publish_trade_history(maker.symbol, trade_data)
+        await self.producer.publish_trade_history(maker.symbol, trade_data)
 
         logger.info(f"Matched {qty} @ {price} for {maker.symbol} ({maker.side} vs {taker.side})")
 
-    def _send_cancel(self, order: Order, reason: str):
+    async def _send_cancel(self, order: Order, reason: str):
          # Send unsolicited cancel for remaining market qty
          report = ExecutionReport(
             OrderID=order.id,
@@ -185,6 +170,6 @@ class MatchingEngine:
             SenderCompID="ECNGATEWAY",
             TransactTime=datetime.utcnow().isoformat()
          )
-         self.producer.publish_execution_report(report)
+         await self.producer.publish_execution_report(report)
 
 from datetime import datetime

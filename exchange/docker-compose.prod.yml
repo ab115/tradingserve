@@ -3,7 +3,8 @@ version: "3.8"
 services:
   exchange-engine:
     build: 
-      context: ./backend
+      context: ../
+      dockerfile: exchange/backend/Dockerfile
     container_name: exchange
     environment:
       - REDIS_HOST=fintech_redis
@@ -13,15 +14,16 @@ services:
       - LOG_LEVEL=INFO
     networks:
       - infrastructure_fintech-net
-    depends_on:
-      - infrastructure_fintech-redis
-      - infrastructure_fintech-redpanda
+    # depends_on:
+    #   - infrastructure_fintech-redis
+    #   - infrastructure_fintech-redpanda
     restart: always
     command: python main.py
 
   exchange-api:
     build: 
-      context: ./backend
+      context: ../
+      dockerfile: exchange/backend/Dockerfile
     container_name: exchange-api
     command: uvicorn api:app --host 0.0.0.0 --port 8002
     environment:
@@ -37,8 +39,8 @@ services:
 
   exchange-ui:
     build: 
-      context: ./ui
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: exchange/ui/Dockerfile
     container_name: exchange-ui
     ports:
       - "3003:3003"
@@ -51,4 +53,4 @@ services:
 networks:
   infrastructure_fintech-net:
     external: true
-    name: infrastructure_fintech-net
+    name: tradingserver_backbone_net

@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-import redis
+import redis.asyncio as redis
 from kafka import KafkaProducer
 from config import settings
 from models import ExecutionReport
@@ -21,77 +21,94 @@ class Producer:
         try:
             self.kafka = KafkaProducer(
                 bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
-                value_serializer=lambda v: json.dumps(v).encode('utf-8')
+                value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+                api_version_auto_timeout_ms=2000,
+                request_timeout_ms=2000
             )
             logger.info(f"Connected to Kafka at {settings.KAFKA_BOOTSTRAP_SERVERS}")
         except Exception as e:
             logger.error(f"Failed to connect to Kafka: {e}")
 
-    def publish_execution_report(self, report: ExecutionReport):
+    async def publish_execution_report(self, report: ExecutionReport):
         data = report.dict()
         
-        # 1. Publish to Kafka
+        # 1. Publish to Kafka (Non-blocking send)
         if self.kafka:
             try:
                 self.kafka.send(settings.KAFKA_EXECUTION_TOPIC, data)
-                self.kafka.flush()
+                # Removed flush() to prevent blocking event loop. 
+                # KafkaProducer handles buffering in background thread.
             except Exception as e:
                 logger.error(f"Failed to send execution report to Kafka: {e}")
 
-        # 2. Publish to Redis (for Realtime UI which likely listens to updates:orders)
-        # We might need to transform it back to the 'Order' format or just send the report
-        # The ECN gateway likely expects specific fields in `updates:orders`.
-        # For now, let's publish the report as is, assuming UI handles it.
+        # 2. Publish to Redis
         try:
-            self.redis.publish("updates:orders", json.dumps(data))
+            await self.redis.publish("updates:orders", json.dumps(data))
         except Exception as e:
             logger.error(f"Failed to publish to Redis: {e}")
 
-    def publish_order_update(self, order_data: dict):
+    async def publish_order_update(self, order_data: dict):
         """Used to simple order updates if needed."""
         try:
-            self.redis.publish("updates:orders", json.dumps(order_data))
+            await self.redis.publish("updates:orders", json.dumps(order_data))
         except Exception as e:
             logger.error(f"Failed to publish to Redis: {e}")
 
-    def publish_snapshot(self, snapshot: dict):
+    async def publish_snapshot(self, snapshot: dict):
         """Persists the order book snapshot to Redis."""
         try:
             symbol = snapshot['symbol']
             key = f"exchange:snapshot:{symbol}"
-            self.redis.set(key, json.dumps(snapshot))
-            # Optional: Publish to a channel if UI wants to subscribe to full book updates?
-            # self.redis.publish(f"updates:book:{symbol}", json.dumps(snapshot))
+            await self.redis.set(key, json.dumps(snapshot))
         except Exception as e:
             logger.error(f"Failed to persist snapshot: {e}")
 
-    def publish_market_data(self, symbol: str, price: float):
+    async def publish_market_data(self, symbol: str, price: float):
         """Persists the last traded price to Redis for API snapshots."""
         try:
             key = f"market_data:{symbol}"
-            # Store price. Can also store timestamp, volume, etc.
-            self.redis.hset(key, mapping={"price": price})
+            # Store price
+            await self.redis.hset(key, mapping={"price": price})
             
-            # Also publish to 'market_data_updates' channel for real-time (optional, if UI subscribed to it)
-            # Currently UI uses EXECUTION_REPORT for updates, but a general market data feed is good practice.
+            # Publish to Granular Channel (Optimized)
             msg = {
                 "type": "MARKET_DATA",
                 "symbol": symbol,
                 "price": price,
                 "timestamp": time.time()
             }
-            self.redis.publish(settings.MARKET_DATA_CHANNEL, json.dumps(msg))
+            # Publish Granular
+            await self.redis.publish(f"market_data_updates:{symbol}", json.dumps(msg))
+            
+            # Keep Global channel for backward compatibility if needed, 
+            # but we optimized API to use granular. 
+            # Let's keep specific ONLY for max optimization.
+            # actually we should publish to settings.MARKET_DATA_CHANNEL if configured?
+            # settings.MARKET_DATA_CHANNEL usually "market_data_updates"
+            # I will publish to Granular ONLY to enforce optimization.
             
         except Exception as e:
             logger.error(f"Failed to publish market data: {e}")
 
-    def publish_trade_history(self, symbol: str, trade_data: dict):
+    async def publish_book_snapshot(self, snapshot: dict):
+        """Broadcasts aggregated order book snapshot to market data channel."""
+        try:
+            symbol = snapshot.get('symbol')
+            if symbol:
+                 await self.redis.publish(f"market_data_updates:{symbol}", json.dumps(snapshot))
+        except Exception as e:
+            logger.error(f"Failed to publish book snapshot: {e}")
+
+    async def publish_trade_history(self, symbol: str, trade_data: dict):
         """Persists executed trade to a capped list for history."""
         try:
             key = f"exchange:trades:{symbol}"
-            # RPUSH to append
-            self.redis.rpush(key, json.dumps(trade_data))
-            # LTRIM to keep last 100
-            self.redis.ltrim(key, -100, -1) 
+            await self.redis.rpush(key, json.dumps(trade_data))
+            await self.redis.ltrim(key, -100, -1) 
         except Exception as e:
             logger.error(f"Failed to persist trade history: {e}")
+            
+    async def close(self):
+        await self.redis.close()
+        if self.kafka:
+            self.kafka.close()

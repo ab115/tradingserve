@@ -1,29 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { connectWebSocket } from '../api';
+import React from 'react';
+import { useStore } from '../state';
 import '../ProTerminal.css';
 
-interface LiveOrder {
-    symbol: string;
-    side: string;
-    type: string;
-    qty: number;
-    price: number;
-    timestamp: number;
-}
-
 const LiveOrders: React.FC = () => {
-    const [orders, setOrders] = useState<LiveOrder[]>([]);
-
-    useEffect(() => {
-        const ws = connectWebSocket((msg: any) => {
-            if (msg.type === 'EVENT' && msg.subtype === 'ORDER_SENT') {
-                const data = msg.data;
-                // Prepend and slice
-                setOrders(prev => [data, ...prev].slice(0, 20));
-            }
-        });
-        return () => ws.close();
-    }, []);
+    const { orders } = useStore();
 
     return (
         <div className="pro-panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

@@ -1,24 +1,25 @@
-import redis
+import redis.asyncio as redis
 import asyncio
 import json
 import os
 from typing import List, Optional
-from market_data_service import MarketDataService
 from models import Position
-
-REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
-REDIS_KEY_TICKERS = 'marketmaker:tickers'
+import config
 
 class MarketDataWorker:
     def __init__(self):
-        self.redis = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
-        self.market_service = MarketDataService()
+        self.redis = redis.Redis(host=config.REDIS_HOST, port=config.REDIS_PORT, decode_responses=True)
+        self.pubsub = self.redis.pubsub()
+
+    async def subscribe_ticker(self, ticker: str):
+        channel = f"market_data_updates:{ticker}"
+        await self.pubsub.subscribe(channel)
+        print(f"Subscribed to {channel}")
 
     async def verify_connection(self):
         """Ensures Redis connection is alive."""
         try:
-            self.redis.ping()
+            await self.redis.ping()
             return True
         except redis.ConnectionError:
             print("MarketDataWorker: Cannot connect to Redis")
@@ -29,20 +30,14 @@ class MarketDataWorker:
         Subscribes to market_data_updates and updates positions in real-time.
         broadcast_callback: async function(data: str) to send updates to WebSocket clients.
         """
-        pubsub = self.redis.pubsub()
-        pubsub.subscribe('market_data_updates')
-        print("Subscribed to Redis channel: market_data_updates")
+        # Global Subscribe Removed for Optimization
+        # await self.pubsub.subscribe('market_data_updates')
+        print("MarketDataWorker: Waiting for specific ticker subscriptions...")
 
         while True:
             try:
-                # Get message from Redis (non-blocking via get_message is one way, 
-                # but in async loop we want to be nice. Redis-py sync pubsub blocks? 
-                # We should use a loop that doesn't block the event loop heavily.
-                # Or run in executor.
-                # Ideally use aioredis or redis-py async client. 
-                # Since we are using sync redis client, we can use listen() but it blocks.
-                
-                message = pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+                # Use get_message directly on pre-initialized pubsub
+                message = await self.pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
                 if message:
                     await self.process_message(message, broadcast_callback)
                 
@@ -53,35 +48,37 @@ class MarketDataWorker:
 
     async def process_message(self, message, broadcast_callback):
         try:
-            data = json.loads(message['data'])
-            ticker = data.get('ticker')
-            price = float(data.get('price', 0.0))
+            raw_data = message['data']
+            if isinstance(raw_data, bytes):
+                raw_data = raw_data.decode('utf-8')
+                
+            data = json.loads(raw_data)
+            
+            # ... (parsing logic unchanged) ...
+            msg_type = data.get('type')
+            ticker = data.get('ticker') or data.get('symbol')
+            # ...
+            price = 0.0
+            if 'price' in data: price = float(data['price'])
+            elif 'last_price' in data: price = float(data['last_price'])
+            elif 'current_price' in data: price = float(data['current_price'])
             
             if not ticker or price <= 0:
                 return
 
             # Check if we hold a position in this ticker
             key = f"marketmaker:position:{ticker}"
-            if not self.redis.exists(key):
-                # Optimization: Cache active tickers set if this hits DB too much
+            if not await self.redis.exists(key):
                 return
 
-            # Atomic Update: WATCH key
-            # In a high-throughput scenario, maybe just HSET directly without WATCH
-            # if we don't strictly need PERFECT atomic 100% accurate PnL vs concurrent trades right now.
-            # But let's try to be correct.
-            
-            # Actually, simpler: just read, calc, write. 
-            # If a trade happens in between, PnL might be slightly off for a microsecond.
-            # HSET price first.
-            
             # Fetch current details for PnL
-            pos_data = self.redis.hgetall(key)
+            pos_data = await self.redis.hgetall(key)
             if not pos_data:
                 return
 
             current_qty = int(pos_data.get('quantity', 0))
             avg_price = float(pos_data.get('avg_price', 0.0))
+            algo_active = str(pos_data.get('algo_active', 'true')).lower() == 'true'
             
             pnl = (price - avg_price) * current_qty
             
@@ -89,7 +86,8 @@ class MarketDataWorker:
                 "current_price": price,
                 "pnl": pnl
             }
-            self.redis.hset(key, mapping=mapping)
+            # algo_active does not change here
+            await self.redis.hset(key, mapping=mapping)
             
             # Construct update object for Frontend
             position = Position(
@@ -98,7 +96,8 @@ class MarketDataWorker:
                 market=pos_data.get('market', ''),
                 avg_price=avg_price,
                 current_price=price,
-                pnl=pnl
+                pnl=pnl,
+                algo_active=algo_active
             )
             
             # Broadcast to UI

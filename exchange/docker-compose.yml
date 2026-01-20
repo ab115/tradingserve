@@ -1,10 +1,9 @@
-version: "3.8"
-
 services:
   exchange-engine:
     build: 
-      context: ./backend
-    container_name: exchange
+      context: ../
+      dockerfile: exchange/backend/Dockerfile
+    container_name: exchange-engine
     environment:
       - REDIS_HOST=fintech_redis
       - REDIS_PORT=6379
@@ -12,15 +11,18 @@ services:
       - KAFKA_TOPIC_EXECUTION_REPORTS=execution_reports
       - LOG_LEVEL=INFO
     networks:
-      - infrastructure_fintech-net
+      - tradingserver-net
+      - fintech_net
     volumes:
       - ./backend:/app
+      - ../packages/py-core:/tmp/py-core
     restart: always
     command: python main.py
 
   exchange-api:
     build: 
-      context: ./backend
+      context: ../
+      dockerfile: exchange/backend/Dockerfile
     container_name: exchange-api
     command: uvicorn api:app --host 0.0.0.0 --port 8002 --reload
     environment:
@@ -29,32 +31,38 @@ services:
     ports:
       - "8002:8002"
     networks:
-      - infrastructure_fintech-net
+      - tradingserver-net
+      - fintech_net
     volumes:
       - ./backend:/app
+      - ../packages/py-core:/tmp/py-core
     depends_on:
       - exchange-engine
     restart: always
 
   exchange-ui:
     build: 
-      context: ./ui
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: exchange/ui/Dockerfile
     container_name: exchange-ui
     ports:
       - "3003:3003"
     volumes:
-      - ./ui:/app
-      - /app/node_modules
+      - ./ui:/src/exchange/ui
+      - /src/exchange/ui/node_modules
+      - ../packages/ui-core:/src/packages/ui-core
     environment:
       - VITE_WS_URL=ws://localhost:8002/ws
     networks:
-      - infrastructure_fintech-net
+      - tradingserver-net
+      - fintech_net
     depends_on:
       - exchange-api
     restart: always
 
 networks:
-  infrastructure_fintech-net:
+  tradingserver-net:
+    driver: bridge
+  fintech_net:
     external: true
-    name: infrastructure_fintech-net
+    name: tradingserver_backbone_net

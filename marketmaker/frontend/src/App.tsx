@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react';
 import Blotter from './components/Blotter';
 import ProTerminal from './components/ProTerminal';
 import { getControlStatus, toggleQuoting } from './api';
+import { useMarketData } from './hooks/useMarketData';
 import './App.css';
 
 function App() {
     const [quotingEnabled, setQuotingEnabled] = useState(true);
     const [isProMode, setIsProMode] = useState(false);
+
+    // Initialize Global Market Data Connection
+    useMarketData();
 
     useEffect(() => {
         getControlStatus().then(res => setQuotingEnabled(res.quoting_enabled));
