@@ -14,6 +14,8 @@ services:
       - REDIS_HOST=fintech_redis
       - REDIS_PORT=6379
       - PORT=8001
+      - ECN_HOST=ecn-fix-server
+      - ECN_PORT=9898
     networks:
       - tradingserver-net
       - fintech_net
