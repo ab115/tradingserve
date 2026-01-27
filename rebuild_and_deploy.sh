@@ -26,7 +26,14 @@ cd "$ROOT_PATH/packages/ui-core"
 echo -e "${CYAN}Installing/Building @tradingserver/ui-core...${NC}"
 npm install
 npm run build
+npm run build
 cd "$ROOT_PATH"
+
+# 2. Ensure Network Exists
+echo -e "${CYAN}Checking Docker Network...${NC}"
+docker network inspect tradingserver_backbone_net >/dev/null 2>&1 || \
+    docker network create tradingserver_backbone_net
+
 
 # Function to Build and Deploy a Service
 deploy_service() {
@@ -48,10 +55,10 @@ deploy_service() {
 
     # Docker Operations
     echo -e "${COLOR}[$NAME] Packaging Docker Image...${NC}"
-    docker compose -f "$COMPOSE_FILE" build
+    docker-compose -f "$COMPOSE_FILE" build
 
     echo -e "${COLOR}[$NAME] Deploying...${NC}"
-    docker compose -f "$COMPOSE_FILE" up -d --force-recreate
+    docker-compose -f "$COMPOSE_FILE" up -d --force-recreate
 
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
