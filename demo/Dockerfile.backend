@@ -1,0 +1,35 @@
+# Dockerfile.backend
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install build deps for QuickFIX
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    make \
+    libxml2 \
+    libxml2-dev \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install python deps
+# We install quickfix explicitly first to leverage cache if possible
+# Install util deps first
+RUN pip install --no-cache-dir fastapi uvicorn psutil redis requests numpy
+
+# Install QuickFIX separately (heavy compilation)
+# We add --verbose to see compilation progress if it fails
+# RUN pip install --no-cache-dir quickfix
+# TEMPORARY: Disable quickfix to unblock build. Simulation will fail but UI will load.
+
+# Copy backend code
+COPY backend /app/backend
+
+# NOTE: We mount ecngateway at runtime in docker-compose, so we don't COPY it here.
+# But we need the 'tests' directory structure potentialy? 
+# The main.py expects execution in /app/ecngateway/tests or similar.
+
+ENV PYTHONPATH=/app
+
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

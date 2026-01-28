@@ -2,6 +2,7 @@ import json
 import redis
 from config import settings
 from typing import Dict, Any
+from datetime import datetime
 
 class RedisStorage:
     def __init__(self):
@@ -52,7 +53,8 @@ class RedisStorage:
         self.r.publish("updates:sessions", json.dumps({
             "type": message_type, 
             "session_id": session_id, 
-            "data": message_data
+            "data": message_data,
+            "timestamp": datetime.now().isoformat()
         }))
 
     def get_order(self, order_id: str) -> Dict[str, Any]:

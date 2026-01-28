@@ -1,0 +1,32 @@
+version: '3.8'
+
+networks:
+  tradingserver_backbone_net:
+    external: true
+
+services:
+  demo-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: demo-backend
+    volumes:
+      # Mount the ecngateway tests so we can run simulations
+      - ../ecngateway/tests:/app/ecngateway/tests
+    networks:
+      - tradingserver_backbone_net
+    ports:
+      - "8005:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  demo-ui:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: demo-ui
+    networks:
+      - tradingserver_backbone_net
+    ports:
+      - "3006:80"
+

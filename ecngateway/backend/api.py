@@ -47,14 +47,14 @@ async def get_sessions():
     session_ids = await r.smembers("sessions:all")
     sessions = []
     for sid in session_ids:
-        # Get latest status? Or just return the ID and verify liveliness via events?
-        # We can simulate status or fetch last message
-        last_msgs = await r.lrange(f"session:{sid}:messages", -1, -1)
+        # Get latest status from Stream
+        last_msgs = await r.xrevrange(f"stream:session:{sid}", count=1)
         status = "Unknown"
         if last_msgs:
             try:
-                last_msg = json.loads(last_msgs[0])
-                status = last_msg.get('type')
+                # Stream entry format: (msgid, {key: value})
+                entry_data = last_msgs[0][1]
+                status = entry_data.get('type')
             except: 
                 pass
         sessions.append({"session_id": sid, "status": status})
@@ -65,17 +65,24 @@ async def get_admin_messages(limit: int = 50):
     """Fetch recent session/admin messages."""
     session_ids = await r.smembers("sessions:all")
     messages = []
-    # This might be slow if many sessions, but fine for now
     for sid in session_ids:
-        raw_msgs = await r.lrange(f"session:{sid}:messages", -limit, -1)
-        for m in raw_msgs:
+        # Fetch from Stream
+        stream_entries = await r.xrevrange(f"stream:session:{sid}", count=limit)
+        for _, entry in stream_entries:
             try:
-                parsed = json.loads(m)
-                messages.append(parsed)
+                # Entry keys: type, session_id, data (json string), timestamp
+                msg = {
+                    "type": entry.get("type"),
+                    "session_id": entry.get("session_id"),
+                    "data": json.loads(entry.get("data", "{}")),
+                    "timestamp": entry.get("timestamp")
+                }
+                messages.append(msg)
             except:
                 pass
-    # Sort by timestamp (descending) roughly if possible, or just return mix
-    return messages
+    # Sort by timestamp (descending)
+    messages.sort(key=lambda x: x.get('timestamp') or "", reverse=True)
+    return messages[:limit]
 
 @app.post("/reset")
 async def reset_data():

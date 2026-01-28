@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Server Portal</title>
+    <title>Equity Trading Technology POD</title>
     <style>
         body {
             font-family: 'Inter', system-ui, sans-serif;
@@ -70,7 +70,7 @@
 </head>
 
 <body>
-    <h1>Trading Server Access Portal</h1>
+    <h1>Equity Trading Technology POD</h1>
     <div class="container" id="links">
         <!-- Links injected by JS -->
     </div>
@@ -79,13 +79,15 @@
         // No longer need host/port logic. Links are RELATIVE path based.
 
         const services = [
-            { path: "/exchange/", name: "Exchange UI", icon: "🏛️", desc: "Main Trading Interface" },
-            { path: "/marketmaker/", name: "Market Maker UI", icon: "🏦", desc: "Liquidity Provider Dashboard" },
+            { path: "edulab.html", name: "EduLab Interactive", icon: "🚀", desc: "The Engineering Ladder (Interactive Labs)" },
             { path: "/marketdata/", name: "Market Data UI", icon: "📊", desc: "Real-time Data Feed" },
+            { path: "/marketmaker/", name: "Market Maker UI", icon: "🏦", desc: "Liquidity Provider Dashboard" },
+            { path: "/exchange/", name: "Exchange UI", icon: "🏛️", desc: "Main Trading Interface" },
             { path: "/ecn/", name: "ECN Gateway UI", icon: "🌐", desc: "External Venue Control" },
             // Infra tools might need direct port access or specific proxy config
             { path: "/redis/", name: "Redis Console", icon: "💾", desc: "Database Inspector (Direct Port 8081)" },
-            { path: "/redpanda/", name: "Redpanda Console", icon: "🐼", desc: "Event Stream Inspector (Direct Port 8080)" },
+            { path: "/redpanda/", name: "Kafka Console", icon: "🐼", desc: "Event Stream Inspector (Direct Port 8080)" },
+
         ];
 
         const container = document.getElementById('links');

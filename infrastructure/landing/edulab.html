@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTech EduLab | The Engineering Ladder</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <!-- Highlight.js for code blocks -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+            --accent-primary: #3b82f6;
+            --accent-neon: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* --- SIDEBAR NAV --- */
+        .sidebar {
+            width: 300px;
+            background: rgba(15, 23, 42, 0.95);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1rem;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 2rem;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .logo span {
+            color: var(--accent-neon);
+        }
+
+        .ladder-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            overflow-y: auto;
+        }
+
+        .step-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .step-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .step-btn.active {
+            background: linear-gradient(90deg, rgba(6, 182, 212, 0.1), transparent);
+            border-left: 3px solid var(--accent-neon);
+            color: #fff;
+        }
+
+        /* Skills & Tracks */
+        .badge-pill {
+            display: inline-block;
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-neon);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-right: 8px;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            text-transform: uppercase;
+        }
+
+        .skill-tag {
+            display: inline-block;
+            background: #334155;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin: 2px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* --- MAIN CONTENT AREA --- */
+        .main-stage {
+            flex: 1;
+            padding: 2rem 4rem;
+            overflow-y: auto;
+            position: relative;
+            background: radial-gradient(circle at top right, rgba(6, 182, 212, 0.05), transparent 40%);
+        }
+
+        /* --- MARKDOWN CONTENT --- */
+        .lab-content {
+            max-width: 900px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+            display: none;
+        }
+
+        .lab-content.visible {
+            opacity: 1;
+            transform: translateY(0);
+            display: block;
+        }
+
+        /* Markdown Styles */
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: var(--accent-neon);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        p,
+        li {
+            line-height: 1.7;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+        }
+
+        blockquote {
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 4px solid var(--accent-neon);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: #fff;
+        }
+
+        pre {
+            background: #111;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code,
+        li code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-warn);
+        }
+
+        /* --- ANIMATED HOME PAGE --- */
+        .home-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding-top: 2rem;
+            display: block;
+            /* Default visible */
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 3rem;
+            background: linear-gradient(to right, #fff, var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Timeline Animation */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        /* The Vertical Line */
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 4px;
+            height: 0%;
+            /* Grows via animation */
+            background: var(--accent-neon);
+            transform: translateX(-50%);
+            animation: growLine 2s ease-out forwards;
+            box-shadow: 0 0 15px var(--accent-neon);
+        }
+
+        @keyframes growLine {
+            to {
+                height: 100%;
+            }
+        }
+
+        /* Timeline Items */
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: scale(0.8);
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Staggered Fade In */
+        .timeline-item:nth-child(1) {
+            animation: popIn 0.5s ease-out 0.5s forwards;
+        }
+
+        .timeline-item:nth-child(2) {
+            animation: popIn 0.5s ease-out 0.8s forwards;
+        }
+
+        .timeline-item:nth-child(3) {
+            animation: popIn 0.5s ease-out 1.1s forwards;
+        }
+
+        .timeline-item:nth-child(4) {
+            animation: popIn 0.5s ease-out 1.4s forwards;
+        }
+
+        .timeline-item:nth-child(5) {
+            animation: popIn 0.5s ease-out 1.7s forwards;
+        }
+
+        .timeline-item:nth-child(6) {
+            animation: popIn 0.5s ease-out 2.0s forwards;
+        }
+
+        .timeline-item:nth-child(7) {
+            animation: popIn 0.5s ease-out 2.3s forwards;
+        }
+
+        .timeline-item:nth-child(8) {
+            animation: popIn 0.5s ease-out 2.6s forwards;
+        }
+
+        .timeline-item:nth-child(9) {
+            animation: popIn 0.5s ease-out 2.9s forwards;
+        }
+
+        .timeline-item:nth-child(10) {
+            animation: popIn 0.5s ease-out 3.2s forwards;
+        }
+
+        .timeline-item:nth-child(11) {
+            animation: popIn 0.5s ease-out 3.5s forwards;
+        }
+
+        @keyframes popIn {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .t-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            width: 45%;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .t-card:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-neon);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+        }
+
+        /* Alternating Sides */
+        .timeline-item:nth-child(odd) .t-card {
+            margin-right: auto;
+            text-align: right;
+        }
+
+        .timeline-item:nth-child(even) .t-card {
+            margin-left: auto;
+            text-align: left;
+        }
+
+        /* Center Badge */
+        .t-badge {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 50px;
+            background: var(--bg-dark);
+            border: 2px solid var(--accent-neon);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            z-index: 5;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .skill-list-mini {
+            font-size: 0.75rem;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+
+        .cta-container {
+            margin-top: 3rem;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 3s forwards;
+        }
+
+        .big-start-btn {
+            background: linear-gradient(135deg, var(--accent-neon), var(--accent-primary));
+            color: #fff;
+            padding: 1.5rem 4rem;
+            border: none;
+            border-radius: 100px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .big-start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo" onclick="showHome()">FinTech <span>EduLab</span></div>
+        <div class="ladder-steps" id="stepList"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-stage" id="stage">
+
+        <!-- ANIMATED HOME PAGE -->
+        <div class="home-container" id="homePage">
+            <h1 class="hero-title">The Engineering Ladder</h1>
+
+            <div class="timeline" id="timeline">
+                <!-- Populated via JS -->
+            </div>
+
+            <div class="cta-container">
+                <button class="big-start-btn" onclick="loadLevel(0)">START JOURNEY</button>
+            </div>
+        </div>
+
+        <!-- LAB CONTENT (Hidden) -->
+        <div id="content-container"></div>
+
+    </div>
+
+    <!-- DATA SCRIPT (Using native JS object to handle multi-line markdown strings safely) -->
+    <script>
+        const labs = [
+            {
+                id: 1,
+                title: "The Build Pipeline",
+                role: "DevOps Engineer",
+                icon: "🚀",
+                skills: ["GitHub Actions", "YAML", "CI/CD"],
+                md: `# Level 1: The Build Pipeline (CI/CD)
+
+> **Job Track**: 🛠️ DevOps Engineer
+
+## Objective
+**Automate the deployment of your Trading Bot.**
+In this lab, you are a client connecting to the hosted Trading Server. You will write a simple Python script ("The Bot") and use GitHub Actions to test it automatically.
+
+## 🎯 Skills Learned
+- \`GitHub Actions\`
+- \`YAML Configuration\`
+- \`Python Testing\`
+- \`CI/CD Pipelines\`
+
+## The Mission
+You are building an Algo Trading firm. You cannot run code manually from your laptop in production. You need a pipeline that verifies your bot's code quality before it touches real money.
+
+## Lab Instructions
+
+### Step 1: Create a Repository
+1. Create a new GitHub repository called \`algo-bot\`.
+2. Clone it to your local machine.
+
+### Step 2: Write "The Bot"
+Create a file \`bot.py\`:
+
+\`\`\`python
+import sys
+
+def strategy(price):
+    if price < 100:
+        return "BUY"
+    return "HOLD"
+
+if __name__ == "__main__":
+    signal = strategy(99)
+    print(f"Signal: {signal}")
+\`\`\`
+
+### Step 3: Define the CI Workflow
+Create \`.github/workflows/ci.yml\`:
+
+\`\`\`yaml
+name: Bot CI
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    - name: Run Logic Test
+      run: |
+        python -c "from bot import strategy; assert strategy(99) == 'BUY'"
+\`\`\`
+
+### Step 4: Push & Verify
+1. \`git add .\`, \`git commit -m "Init"\`, \`git push\`.
+2. Go to your GitHub Repo -> Actions tab.
+3. Verify the build turns Green.
+
+## Outcome
+You now have a CI pipeline. In future levels, this pipeline could deploy your bot to the cloud.`
+            },
+            {
+                id: 2,
+                title: "The Container",
+                role: "DevOps Engineer",
+                icon: "📦",
+                skills: ["Dockerfile", "Docker Compose", "Containers"],
+                md: `# Level 2: The Container (Docker)
+
+> **Job Track**: 📦 DevOps / Platform Engineer
+
+## Objective
+**Containerize your Bot.**
+"It works on my machine" is not a valid excuse in Finance. You need to package your trading bot into a standard unit (Container) that runs identically on your laptop, the server, and the cloud.
+
+## 🎯 Skills Learned
+- \`Dockerfile\`
+- \`Docker Compose\`
+- \`Container Lifecycle\`
+- \`Environment Variables\`
+
+## The Mission
+You wrote a bot in Level 1. Now, package it so we can ship it.
+
+## Lab Instructions
+
+### Step 1: Create a Dockerfile
+In your \`algo-bot\` repository, create a file named \`Dockerfile\` (no extension):
+
+\`\`\`dockerfile
+# Use a lightweight Python image
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy the bot code
+COPY bot.py .
+
+# Command to run the bot
+CMD ["python", "bot.py"]
+\`\`\`
+
+### Step 2: Build the Image
+\`\`\`bash
+docker build -t my-algo-bot .
+\`\`\`
+
+### Step 3: Run the Container
+\`\`\`bash
+docker run --rm my-algo-bot
+\`\`\`
+
+### Step 4: Define Services (Docker Compose)
+Real apps have dependencies. Create \`docker-compose.yml\`:
+
+\`\`\`yaml
+version: '3.8'
+services:
+  bot:
+    build: .
+    environment:
+      - SIGNAL_THRESHOLD=100
+    command: python -c "import time; time.sleep(3600)"
+\`\`\`
+
+### Step 5: Boot Up
+\`\`\`bash
+docker compose up -d
+docker compose ps
+\`\`\`
+
+## Outcome
+Your code is now portable. You can run \`docker compose up\` on any machine to start your trading system.`
+            },
+            {
+                id: 3,
+                title: "The Cockpit",
+                role: "SRE Engineer",
+                icon: "📊",
+                skills: ["PromQL", "Grafana", "Observability"],
+                md: `# Level 3: The Cockpit (Observability)
+
+> **Job Track**: 🚨 Site Reliability Engineer (SRE)
+
+## Objective
+**Investigate Market Anomalies using Grafana.**
+The Trading Server exposes its internal metrics via Prometheus and visualizes them in Grafana. You are an External Analyst seeing odd behavior. Use the dashboards to catch the issue.
+
+## 🎯 Skills Learned
+- \`PromQL Querying\`
+- \`Grafana Dashboards\`
+- \`Latency Analysis\`
+- \`System Observability\`
+
+## The Mission
+Reports say the Exchange is slowing down. You have read-only access to the public Grafana dashboard. Find the metric that proves the latency spike.
+
+## Lab Instructions
+
+### Step 1: Access Grafana
+1. Open your browser to \`http://<SERVER_IP>:3000\`.
+2. Login with \`admin\` / \`admin\`.
+
+### Step 2: Build a Custom Dashboard
+You suspect the "Order Rate" is too high.
+1. Click **Dashboards** -> **New Dashboard** -> **Add Visualization**.
+2. Select **Prometheus** as data source.
+3. Query: \`rate(exchange_orders_total[1m])\`.
+4. Label the panel "Global Order Rate".
+
+### Step 3: Correlate with Latency
+1. Add another panel.
+2. Query: \`histogram_quantile(0.99, rate(exchange_latency_bucket[1m]))\`.
+3. Observe: Does latency peak when Order Rate peaks?
+
+## Outcome
+You learned how to query a system's health without having code access.`
+            },
+            {
+                id: 4,
+                title: "The Tape Reader",
+                role: "Data Engineer",
+                icon: "📼",
+                skills: ["Redis", "Pub/Sub", "Data Streams"],
+                md: `# Level 4: The Tape Reader (Redis)
+
+> **Job Track**: 💾 Data Engineer
+
+## Objective
+**Tap into the raw data feed using Redis.**
+The Exchange broadcasts every price ticking on a public Redis Channel. You will build a "Tape Reader" client to subscribe and print these ticks in real-time.
+
+## 🎯 Skills Learned
+- \`Redis CLI\`
+- \`Pub/Sub Architecture\`
+- \`Key-Value Stores\`
+- \`Real-time Data Streams\`
+
+## The Mission
+You need the fastest possible price feed. The Web UI is too slow. You will connect directly to the Redis port (6379) exposed by the server.
+
+## Lab Instructions
+
+### Step 1: Install Redis Tools
+- Windows: \`choco install redis-64\`
+- Mac/Linux: \`brew install redis\` or \`apt install redis-tools\`
+- Or use Python: \`pip install redis\`
+
+### Step 2: Connect from Terminal
+\`\`\`bash
+redis-cli -h <SERVER_IP> -p 6379
+> PING
+PONG
+\`\`\`
+
+### Step 3: Subscribe to the Feed
+\`\`\`bash
+> SUBSCRIBE market_data
+\`\`\`
+Keep this running. Request a "Simulation Start" from the Web Portal. You should see JSON messages flying by:
+\`{"symbol": "AAPL", "price": 150.23, "ts": 16789...}\`
+
+### Challenge
+Write a Python script \`tape_reader.py\`:
+1. Connects to Redis.
+2. Subscribes to \`market_data\`.
+3. Prints **only** AAPL trades > $150.
+
+## Outcome
+You bypassed the UI to get raw, low-latency data directly from the infrastructure.`
+            },
+            {
+                id: 5,
+                title: "The Algo Trader",
+                role: "Quant Developer",
+                icon: "🤖",
+                skills: ["REST API", "WebSocket", "AsyncIO"],
+                md: `# Level 5: The Algo Trader (REST & WebSocket)
+
+> **Job Track**: ⚡ Quantitative Developer
+
+## Objective
+**Build an automated Trading Client.**
+You will write a script that connects to the Exchange's API to make trading decisions automatically.
+
+## 🎯 Skills Learned
+- \`REST API Polling\`
+- \`WebSocket Streaming\`
+- \`Python Requests\`
+- \`AsyncIO / Await\`
+
+## The Mission
+Your strategy is simple: "Buy low, Sell high".
+1.  **Poll** the Snapshot (REST) to find a starting price.
+2.  **Listen** to the Stream (WebSocket) for updates.
+3.  **Execute** an Order (REST) when the price drops.
+
+## Lab Instructions
+
+### Step 1: Get the Snapshot (REST)
+Endpoint: \`GET http://<SERVER_IP>/marketdata/api/book/AAPL\`
+Response: \`{"bids": [...], "asks": [...]}\`
+
+\`\`\`python
+import requests
+res = requests.get("http://<SERVER_IP>/marketdata/api/book/AAPL")
+print(res.json())
+\`\`\`
+
+### Step 2: Listen to Stream (WebSocket)
+Endpoint: \`ws://<SERVER_IP>/marketdata/ws/level1\`
+
+\`\`\`python
+import websockets, asyncio
+
+async def listen():
+    async with websockets.connect("ws://<SERVER_IP>/marketdata/ws/level1") as ws:
+        while True:
+            msg = await ws.recv()
+            print(f"Update: {msg}")
+
+asyncio.run(listen())
+\`\`\`
+
+### Step 3: Execute Order (REST)
+Endpoint: \`POST http://<SERVER_IP>/ecn/api/orders\`
+Payload: \`{"symbol": "AAPL", "side": "BUY", "qty": 100, "price": 149.00}\`
+
+## Outcome
+You have built a fully functional Algo Trader running on your machine, interacting with the remote exchange.`
+            },
+            {
+                id: 6,
+                title: "The Glass",
+                role: "Frontend Architect",
+                icon: "🖥️",
+                skills: ["React", "Vite", "Real-time"],
+                md: `# Level 6: The Glass (React UI)
+
+> **Job Track**: 🎨 Frontend Architect
+
+## Objective
+**Build a custom Trading Dashboard.**
+You don't like the official Exchange UI? Build your own.
+You will create a simplified React application running on your laptop that connects to the Server's WebSocket feed to display a live "Order Blotter".
+
+## 🎯 Skills Learned
+- \`React.js\` / \`Vite\`
+- \`WebSocket Integration\`
+- \`Real-time UI Updates\`
+- \`SPA Architecture\`
+
+## The Mission
+Your Head Trader needs a filtered view of specific symbols. The main portal is too cluttered. Build a lightweight "Blotter App" using React.
+
+## Lab Instructions
+
+### Step 1: Scaffold the App
+(Requires Node.js)
+\`\`\`bash
+npm create vite@latest my-blotter -- --template react
+cd my-blotter
+npm install
+npm run dev
+\`\`\`
+
+### Step 2: Connect to WebSocket
+In \`App.jsx\`:
+
+\`\`\`javascript
+import { useEffect, useState } from 'react';
+
+function App() {
+  const [trades, setTrades] = useState([]);
+
+  useEffect(() => {
+    const ws = new WebSocket('ws://<SERVER_IP>/marketdata/ws/level1');
+    
+    ws.onmessage = (event) => {
+      const trade = JSON.parse(event.data);
+      setTrades(prev => [trade, ...prev].slice(0, 10)); // Keep last 10
+    };
+
+    return () => ws.close();
+  }, []);
+
+  return (
+    <table>
+      <thead><tr><th>Symbol</th><th>Price</th></tr></thead>
+      <tbody>
+        {trades.map((t, i) => (
+          <tr key={i}><td>{t.symbol}</td><td>{t.price}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+\`\`\`
+
+### Challenge
+Add color coding: Green row if \`price\` > last price, Red if lower.
+
+## Outcome
+You built a "Single Page Application" (SPA) that consumes live financial data from a remote server.`
+            },
+            {
+                id: 7,
+                title: "The Audit Log",
+                role: "Compliance Eng",
+                icon: "📜",
+                skills: ["Redpanda", "Kafka", "Streaming"],
+                md: `# Level 7: The Audit Log (Redpanda Streaming)
+
+> **Job Track**: 🛡️ Compliance Engineer
+
+## Objective
+**Establish a "Drop Copy" Compliance Feed.**
+For every trade executed on the exchange, a copy is dropped onto a **Redpanda** Topic (Kafka-compatible). You will build a Python Compliance Tool that listens to this topic to archive trades.
+
+## 🎯 Skills Learned
+- \`Apache Kafka Protocol\`
+- \`Redpanda Streaming\`
+- \`Event Driven Architecture\`
+- \`Data Archiving\`
+
+## The Mission
+The Regulator requires a separate, read-only record of all trades. You cannot trust the REST API logs; you need the raw event stream.
+
+## Lab Instructions
+
+### Step 1: Install Python Client
+\`\`\`bash
+pip install confluent-kafka
+\`\`\`
+
+### Step 2: Connect to Redpanda
+The Server exposes Redpanda on Port \`19092\`.
+
+\`\`\`python
+from confluent_kafka import Consumer
+
+conf = {
+    'bootstrap.servers': '<SERVER_IP>:19092',
+    'group.id': 'compliance_archiver',
+    'auto.offset.reset': 'earliest'
+}
+
+consumer = Consumer(conf)
+consumer.subscribe(['execution_reports'])
+\`\`\`
+
+### Step 3: Archive the Data
+Write a loop that writes every message to a local file \`trade_archive.log\`.
+
+\`\`\`python
+with open('trade_archive.log', 'w') as f:
+    while True:
+        msg = consumer.poll(1.0)
+        if msg is None: continue
+        
+        trade_data = msg.value().decode('utf-8')
+        print(f"Archiving: {trade_data}")
+        f.write(trade_data + "\\n")
+\`\`\`
+
+### Challenge
+Run the "Market Crash" simulation on the Server. Does your archiver keep up with the burst of traffic?
+
+## Outcome
+You learned how to consume high-throughput event streams for backend processing.`
+            },
+            {
+                id: 8,
+                title: "The Brain",
+                role: "AI Engineer",
+                icon: "🧠",
+                skills: ["LLM", "Prompt Engineering", "Agents"],
+                md: `# Level 8: The Brain (Agentic AI)
+
+> **Job Track**: 🤖 Agentic AI Engineer
+
+## Objective
+**Build an AI Analyst that trades on News.**
+You will write a client script that uses an LLM (Large Language Model) to analyze text input (news headlines) and send trading signals to the Exchange.
+
+## 🎯 Skills Learned
+- \`Large Language Models (LLM)\`
+- \`Prompt Engineering\`
+- \`Sentiment Analysis\`
+- \`AI Agents\`
+
+## The Mission
+Markets move on news. Speed matters, but understanding "Context" matters more. Build a script that asks ChatGPT / Gemini: "Is this headline bullish or bearish?"
+
+## Lab Instructions
+
+### Step 1: Define the Prompt
+\`\`\`python
+def analyze_sentiment(headline):
+    prompt = f"Analyze sentiment: '{headline}'. Reply ONLY 'BUY' or 'SELL'."
+    # Call LLM API...
+    return response.text.strip()
+\`\`\`
+
+### Step 2: The Loop
+Make a list of mock headlines.
+\`\`\`python
+news = [
+    "Tech giant reports record profits!",
+    "Central Bank raises interest rates unexpectedly."
+]
+
+for headline in news:
+    signal = analyze_sentiment(headline)
+    print(f"News: {headline} -> Signal: {signal}")
+    
+    if signal == "BUY":
+        place_order("AAPL", "BUY", 100)
+\`\`\`
+
+## Outcome
+You combined **Generative AI** with **Transactional Finance**.`
+            },
+            {
+                id: 9,
+                title: "The Analyst",
+                role: "GenAI Specialist",
+                icon: "🔮",
+                skills: ["RAG", "LangChain", "Vector DB", "PDF Ingestion"],
+                md: `# Level 9: The Analyst (Gen AI / RAG)
+
+> **Job Track**: 🧠 AI Engineer (GenAI Specialist)
+
+## Objective
+**Conversational Finance (RAG).**
+AI models hallucinate. To trust them with money, we need to ground them in facts. You will build a **Retrieval Augmented Generation (RAG)** pipeline to read a company's Quarterly Report (PDF) and answer financial questions accurately.
+
+## 🎯 Skills Learned
+- \`LangChain\`
+- \`Vector Databases (ChromaDB)\`
+- \`RAG Pipeline\`
+- \`PDF Ingestion\`
+
+## The Mission
+Your Portfolio Manager is too busy to read Apple's 10-K report. Build a tool where they can ask: "What are the risk factors this year?" and get a cited answer.
+
+## Lab Instructions
+
+### Step 1: Dependencies
+Create a \`requirements.txt\` for your AI lab:
+\`\`\`text
+langchain
+langchain-community
+chromadb
+pypdf
+sentence-transformers
+\`\`\`
+Run \`pip install -r requirements.txt\`.
+
+### Step 2: The Document
+Download a sample "Apple 10-K" PDF (or use a dummy text file \`report.txt\` with financial data).
+Place it in your project folder.
+
+### Step 3: Ingest and Index
+Create \`analyst.py\`:
+
+\`\`\`python
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import SentenceTransformerEmbeddings
+
+# 1. Load
+loader = PyPDFLoader("report.pdf")
+pages = loader.load_and_split()
+
+# 2. Split
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+splits = text_splitter.split_documents(pages)
+
+# 3. Store (Vector DB)
+embedding = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+vectorstore = Chroma.from_documents(documents=splits, embedding=embedding)
+retriever = vectorstore.as_retriever()
+
+print("✅ Document Indexed.")
+\`\`\`
+
+### Step 4: The Retrieval Chain
+Append to \`analyst.py\`:
+
+\`\`\`python
+from langchain.chains import RetrievalQA
+from langchain_community.llms import OpenAI # or Ollama/LlamaCpp
+
+qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
+
+query = "What is the guidance for Q4?"
+response = qa_chain.run(query)
+print(f"🤖 Answer: {response}")
+\`\`\`
+
+## Outcome
+You built an AI that can "read" files and answer questions based *only* on the provided context.`
+            },
+            {
+                id: 10,
+                title: "The Fund Manager",
+                role: "Agentic AI Engineer",
+                icon: "🕵️",
+                skills: ["LangGraph", "MCP", "Multi-Agent", "Tool Calling"],
+                md: `# Level 10: The Fund Manager (Agentic AI)
+
+> **Job Track**: 🕵️ Agentic AI Engineer
+
+## Objective
+**Autonomous Trading with MCP.**
+RAG is passive (it answers questions). Agents are active (they take actions). You will build a **LangGraph** workflow that connects your Analyst (from Level 9) to a Trader Agent using the **Model Context Protocol (MCP)** standard for tools.
+
+## 🎯 Skills Learned
+- \`LangGraph / LangChain Agents\`
+- \`Model Context Protocol (MCP)\`
+- \`Tool Calling\`
+- \`Multi-Agent Orchestration\`
+
+## The Mission
+Build an autonomous pod:
+1.  **Analyst Agent**: Reads news/reports (RAG).
+2.  **Risk Agent**: Checks market volatility.
+3.  **Portfolio Agent**: Decides "BUY" or "HOLD" based on the other two.
+
+## Lab Instructions
+
+### Step 1: Define Tools (MCP Style)
+Create \`tools.py\`. We wrap our previous functions as "Tools".
+
+\`\`\`python
+from langchain.tools import tool
+
+@tool
+def get_analyst_opinion(ticker: str) -> str:
+    """Consults the RAG model for a sentiment on the ticker."""
+    # Call your Level 9 logic here
+    return "Bullish based on recent growth."
+
+@tool
+def execute_trade(ticker: str, action: str) -> str:
+    """Executes a trade on the server."""
+    return f"Executed {action} on {ticker}"
+\`\`\`
+
+### Step 2: Build the Graph
+Create \`fund_manager.py\` using \`langgraph\`.
+
+\`\`\`python
+from langgraph.graph import StateGraph, END
+from typing import TypedDict
+
+class AgentState(TypedDict):
+    messages: list
+    decision: str
+
+def analyst_node(state):
+    print("🕵️ Analyst: Market looks good.")
+    return {"messages": ["Analyst says bullish"]}
+
+def trader_node(state):
+    print("💰 Trader: Conditions met. BUYING.")
+    return {"decision": "BUY"}
+
+workflow = StateGraph(AgentState)
+workflow.add_node("analyst", analyst_node)
+workflow.add_node("trader", trader_node)
+
+workflow.set_entry_point("analyst")
+workflow.add_edge("analyst", "trader")
+workflow.add_edge("trader", END)
+
+app = workflow.compile()
+\`\`\`
+
+### Step 3: Run the Hedge Fund
+\`\`\`python
+result = app.invoke({"messages": []})
+print(f"Final Decision: {result['decision']}")
+\`\`\`
+
+## Outcome
+You moved beyond simple chatbots to **Agentic Workflows**, where AI models collaborate to solve complex, multi-step problems autonomously.`
+            },
+            {
+                id: 11,
+                title: "The Cloud Native",
+                role: "Cloud Engineer",
+                icon: "☁️",
+                skills: ["Auto-Scaling", "Docker", "HPA", "Python"],
+                md: `# Level 11: The Cloud Native (Auto-Scaling)
+
+> **Job Track**: ☁️ Cloud Engineer
+
+## Objective
+**Master Elasticity.**
+The Cloud isn't just about renting servers; it's about **Elasticity**. As a Cloud Engineer, you build systems that expand and contract like a living lung. We will simulate this locally using Docker.
+
+## 🎯 Skills Learned
+- \`Cloud Native Architecture\`
+- \`Horizontal Pod Autoscaling (HPA)\`
+- \`Docker Compose Scaling\`
+- \`Observability & Control Loops\`
+
+## The Mission
+1. Run your bot in Docker Compose.
+2. Simulate a "Surge" of signals.
+3. Write a Python script that detects the surge and runs \`docker compose up --scale bot=5\`.
+
+## Lab Instructions
+
+### Step 1: Setup
+Use the \`docker-compose.yml\` from Level 2.
+Ensure your bot prints "Processing signal..." every time it trades.
+
+### Step 2: The Metrics
+Create a file \`metrics.py\` (or exposes a tiny flask endpoint in your bot) to output its queue depth.
+*Simpler approach for this lab:* We will assume "Time of Day" or "Market Volatility" is the metric.
+
+### Step 3: The Auto-Scaler Script
+Create \`autoscale_bot.py\`:
+
+\`\`\`python
+import subprocess
+import time
+import random
+
+def get_market_volatility():
+    return random.randint(0, 100)
+
+current_replicas = 1
+
+while True:
+    volatility = get_market_volatility()
+    target_replicas = 1
+    if volatility > 80:
+        target_replicas = 5
+    elif volatility > 50:
+        target_replicas = 3
+        
+    if target_replicas != current_replicas:
+        subprocess.run(f"docker compose up -d --scale bot={target_replicas}", shell=True)
+        current_replicas = target_replicas
+        
+    time.sleep(5)
+\`\`\`
+
+## Outcome
+You implemented a **Control Loop**, the fundamental building block of Kubernetes and Cloud Auto-scaling.`
+            }
+        ];
+
+        const stepList = document.getElementById('stepList');
+        const contentContainer = document.getElementById('content-container');
+        const homePage = document.getElementById('homePage');
+        const timeline = document.getElementById('timeline');
+
+        let activeIndex = -1;
+
+        // --- INIT ---
+        function init() {
+            renderSidebar();
+            renderTimeline();
+            showHome();
+        }
+
+        // --- RENDER SIDEBAR ---
+        function renderSidebar() {
+            stepList.innerHTML = '';
+            labs.forEach((lab, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'step-btn';
+                btn.onclick = () => loadLevel(index);
+                btn.innerHTML = `
+                <div class="step-icon">${lab.icon}</div>
+                <div class="step-info">
+                    <span class="step-role">${lab.role}</span>
+                    <span class="step-title">${lab.title}</span>
+                </div>
+            `;
+                stepList.appendChild(btn);
+            });
+        }
+
+        // --- RENDER TIMELINE (HOME) ---
+        function renderTimeline() {
+            timeline.innerHTML = '';
+            labs.forEach((lab, index) => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
+
+                // Skills generation
+                const skillsHtml = lab.skills.map(s => `<span class="skill-tag">${s}</span>`).join('');
+
+                item.innerHTML = `
+                <div class="t-badge">${lab.icon}</div>
+                <div class="t-card" onclick="loadLevel(${index})">
+                    <div style="font-size:0.8rem; color:var(--accent-neon); text-transform:uppercase; font-weight:700;">${lab.role}</div>
+                    <div style="font-weight:700; color:#fff; font-size:1.1rem; margin-bottom:0.2rem;">${lab.title}</div>
+                    <div class="skill-list-mini">${skillsHtml}</div>
+                </div>
+            `;
+                timeline.appendChild(item);
+            });
+        }
+
+        // --- ACTIONS ---
+        function showHome() {
+            activeIndex = -1;
+            homePage.style.display = 'block';
+            contentContainer.innerHTML = '';
+
+            // Reset Sidebar state
+            document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+        }
+
+        function loadLevel(index) {
+            activeIndex = index;
+            homePage.style.display = 'none';
+
+            // Update Sidebar
+            document.querySelectorAll('.step-btn').forEach((btn, i) => {
+                if (i === index) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+
+            // Convert Markdown
+            const lab = labs[index];
+            const htmlContent = marked.parse(lab.md);
+
+            contentContainer.innerHTML = `
+            <div class="lab-content visible">
+                ${htmlContent}
+            </div>
+        `;
+
+            // Highlight Code
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+
+            // Scroll to top
+            document.getElementById('stage').scrollTop = 0;
+        }
+
+        // Run
+        init();
+
+    </script>
+</body>
+
+</html>
