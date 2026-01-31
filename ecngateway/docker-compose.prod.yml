@@ -9,7 +9,7 @@ services:
     # ports:
     #   - "9898:9898" # Exposed via HAProxy
     environment:
-      - REDIS_HOST=host.docker.internal
+      - REDIS_HOST=fintech_redis
       - REDIS_PORT=6379
       - KAFKA_BOOTSTRAP_SERVERS=fintech_redpanda:9092
       - PYTHONUNBUFFERED=1
@@ -46,10 +46,10 @@ services:
     ports:
       - "8010:8000"
     environment:
-      - REDIS_HOST=host.docker.internal
+      - REDIS_HOST=fintech_redis
       - REDIS_PORT=6379
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    #extra_hosts:
+    #  - "host.docker.internal:host-gateway"
     # volumes: removed for production
     networks:
       - default
