@@ -21,12 +21,21 @@ try {
 }
 Set-Location $rootPath
 
+# 1.5 Ensure Network Exists
+Write-Host "Checking Docker Network..." -ForegroundColor Cyan
+$netCheck = docker network ls --filter name=tradingserver_backbone_net -q
+if (-not $netCheck) {
+    Write-Host "Creating network tradingserver_backbone_net..." -ForegroundColor Cyan
+    docker network create tradingserver_backbone_net
+}
+
 # Define services with UI paths
 $services = @(
     @{ Name = "EXCH"; File = "exchange/docker-compose.prod.yml"; Color = "Green"; UiPath = "exchange/ui" },
     @{ Name = "MD"; File = "marketdata/docker-compose.prod.yml"; Color = "Magenta"; UiPath = "marketdata/ui" },
     @{ Name = "MM"; File = "marketmaker/docker-compose.prod.yml"; Color = "Yellow"; UiPath = "marketmaker/frontend" },
-    @{ Name = "ECN"; File = "ecngateway/docker-compose.prod.yml"; Color = "Cyan"; UiPath = "ecngateway/ui" }
+    @{ Name = "ECN"; File = "ecngateway/docker-compose.prod.yml"; Color = "Cyan"; UiPath = "ecngateway/ui" },
+    @{ Name = "DEMO"; File = "demo/student-demo/docker-compose.yml"; Color = "Blue"; UiPath = "demo/student-demo/ui" }
 )
 
 # 2. Build UIs Locally & Package Docker
@@ -95,6 +104,10 @@ docker compose -f marketdata/docker-compose.prod.yml up -d
 # 6. Start Market Maker
 Write-Host "[6/6] Starting Market Maker..."
 docker compose -f marketmaker/docker-compose.prod.yml up -d
+
+# 7. Start Student Demo
+Write-Host "[7/7] Starting Student Demo..."
+docker compose -f demo/student-demo/docker-compose.yml up -d
 
 Write-Host "-------------------------------------------" -ForegroundColor Green
 Write-Host "Full Stack Deployed with Proxy Routing!" -ForegroundColor Green

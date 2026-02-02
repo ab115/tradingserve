@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  demo-backend:
+    build: ./backend
+    container_name: demo_backend
+    environment:
+      - REDIS_HOST=fintech_redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKER=fintech_redpanda:9092
+      - LABS_DIR=/app/labs
+      - TRADING_SERVER_HOST=ecn-api
+      - TRADING_SERVER_PORT=8000
+    volumes:
+      - ../labs:/app/labs # Mount the labs from parent directory
+    ports:
+      - "8001:8001"
+    networks:
+      - fintech_net
+
+  demo-ui:
+    build:
+      context: ..
+      dockerfile: student-demo/ui/Dockerfile
+    container_name: demo_ui
+    ports:
+      - "3010:80"
+    depends_on:
+      - demo-backend
+    networks:
+      - fintech_net
+
+networks:
+  fintech_net:
+    external: true
+    name: tradingserver_backbone_net

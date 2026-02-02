@@ -14,6 +14,8 @@ sleep 3
 
 # List of containers to remove (Explicit names from compose files)
 CONTAINERS=(
+    "demo_ui"
+    "demo_backend"
     "fintech_haproxy"
     "fintech_redis"
     "fintech_redpanda"

@@ -78,6 +78,9 @@ deploy_service "MM" "marketmaker/docker-compose.prod.yml" "marketmaker/frontend"
 # ECN Gateway
 deploy_service "ECN" "ecngateway/docker-compose.prod.yml" "ecngateway/ui" "$CYAN"
 
+# Student Demo
+deploy_service "DEMO" "demo/student-demo/docker-compose.yml" "demo/student-demo/ui" "$CYAN"
+
 # 3. Infrastructure
 echo -e "${CYAN}[Infrastructure] Restarting Portal Gateway...${NC}"
 docker compose -f infrastructure/docker-compose.infra.yml up -d --force-recreate nginx-portal
@@ -104,6 +107,9 @@ docker compose -f marketdata/docker-compose.prod.yml up -d
 
 echo -e "${CYAN}[6/6] Starting Market Maker...${NC}"
 docker compose -f marketmaker/docker-compose.prod.yml up -d
+
+echo -e "${CYAN}[7/7] Starting Student Demo...${NC}"
+docker compose -f demo/student-demo/docker-compose.yml up -d
 
 echo -e "${GREEN}-------------------------------------------${NC}"
 echo -e "${GREEN}Full Stack Deployed with Proxy Routing!${NC}"

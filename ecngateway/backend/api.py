@@ -60,6 +60,63 @@ async def get_sessions():
         sessions.append({"session_id": sid, "status": status})
     return sessions
 
+@app.post("/orders")
+async def place_order(order: dict):
+    """Place an order and route to Exchange via Redis Stream."""
+    import uuid
+    from datetime import datetime
+    
+    order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
+    timestamp = datetime.utcnow().isoformat()
+    
+    symbol = order.get("symbol", "UNKNOWN")
+    side = order.get("side", "BUY")
+    qty = int(order.get("qty", 0))
+    price = float(order.get("price", 0.0))
+    
+    # 1. Store Initial State in ECN Redis (so it shows in UI immediately)
+    new_order = {
+        "internal_id": order_id, # UI uses this if ClOrdID missing
+        "ClOrdID": order_id,     # Standard ID
+        "Symbol": symbol,        # PascalCase for UI consistency
+        "Side": side,
+        "OrderQty": str(qty),
+        "Price": str(price),
+        "Status": "New", 
+        "TransactTime": timestamp, # ISO Timestamp
+        "MsgType": "8",          # Execution Report type
+        "OrdStatus": "New",
+        "SenderCompID": "DEMO_USER",
+        "TargetCompID": "EXCHANGE"
+    }
+    
+    async with r.pipeline() as pipe:
+        pipe.sadd("orders:all", order_id)
+        pipe.hset(f"order:{order_id}", mapping=new_order)
+        # Notify UI of "New" state immediately - Send FLATTENED object
+        pipe.publish("updates:orders", json.dumps(new_order))
+        await pipe.execute()
+        
+    # 2. Send to Exchange via Stream
+    stream_entry = {
+        "ClOrdID": order_id,
+        "Symbol": symbol,
+        "Side": side,
+        "Price": str(price),
+        "OrderQty": str(qty),
+        "OrdType": "2", # LIMIT
+        "SenderCompID": "DEMO_USER",
+        "TargetCompID": "EXCHANGE",
+        "TransactTime": timestamp
+    }
+    
+    # XADD to 'orders:stream'
+    await r.xadd("orders:stream", stream_entry)
+    
+    return {"status": "ok", "order_id": order_id}
+
+# Mock fill removed: Real exchange will handle it.
+
 @app.get("/admin/messages")
 async def get_admin_messages(limit: int = 50):
     """Fetch recent session/admin messages."""

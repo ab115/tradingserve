@@ -59,8 +59,12 @@ Start-Service "marketdata/docker-compose.prod.yml" "Market Data"
 Write-Host "[5/6] Starting Market Maker..." -ForegroundColor Cyan
 Start-Service "marketmaker/docker-compose.prod.yml" "Market Maker"
 
-# 6. Gateway Restart (Ensure Nginx picks up upstream routes)
-Write-Host "[6/6] Connecting Portal..." -ForegroundColor Cyan
+# 6. Student Demo
+Write-Host "[6/7] Starting Student Demo..." -ForegroundColor Cyan
+Start-Service "demo/student-demo/docker-compose.yml" "Student Demo"
+
+# 7. Gateway Restart (Ensure Nginx picks up upstream routes)
+Write-Host "[7/7] Connecting Portal..." -ForegroundColor Cyan
 docker compose -f infrastructure/docker-compose.infra.yml up -d --force-recreate nginx-portal
 Write-Host "[Gateway] Ready." -ForegroundColor Green
 

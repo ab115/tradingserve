@@ -1,0 +1,7 @@
+version: '3.8'
+services:
+  bot:
+    build: .
+    environment:
+      - SIGNAL_THRESHOLD=100
+    command: python -c "import time; time.sleep(3600)"

@@ -446,71 +446,99 @@
                 icon: "🚀",
                 skills: ["GitHub Actions", "YAML", "CI/CD"],
                 md: `# Level 1: The Build Pipeline (CI/CD)
-
-> **Job Track**: 🛠️ DevOps Engineer
-
-## Objective
-**Automate the deployment of your Trading Bot.**
-In this lab, you are a client connecting to the hosted Trading Server. You will write a simple Python script ("The Bot") and use GitHub Actions to test it automatically.
-
-## 🎯 Skills Learned
-- \`GitHub Actions\`
-- \`YAML Configuration\`
-- \`Python Testing\`
-- \`CI/CD Pipelines\`
-
-## The Mission
-You are building an Algo Trading firm. You cannot run code manually from your laptop in production. You need a pipeline that verifies your bot's code quality before it touches real money.
-
-## Lab Instructions
-
-### Step 1: Create a Repository
-1. Create a new GitHub repository called \`algo-bot\`.
-2. Clone it to your local machine.
-
-### Step 2: Write "The Bot"
-Create a file \`bot.py\`:
-
-\`\`\`python
-import sys
-
-def strategy(price):
-    if price < 100:
-        return "BUY"
-    return "HOLD"
-
-if __name__ == "__main__":
-    signal = strategy(99)
-    print(f"Signal: {signal}")
-\`\`\`
-
-### Step 3: Define the CI Workflow
-Create \`.github/workflows/ci.yml\`:
-
-\`\`\`yaml
-name: Bot CI
-on: [push]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-    - name: Run Logic Test
-      run: |
-        python -c "from bot import strategy; assert strategy(99) == 'BUY'"
-\`\`\`
-
-### Step 4: Push & Verify
-1. \`git add .\`, \`git commit -m "Init"\`, \`git push\`.
-2. Go to your GitHub Repo -> Actions tab.
-3. Verify the build turns Green.
-
-## Outcome
-You now have a CI pipeline. In future levels, this pipeline could deploy your bot to the cloud.`
+ 
+ > **Job Track**: 🛠️ DevOps Engineer
+ 
+ ## Objective
+ **Master the path from code commit to production deployment.**
+ In this lab, you will learn the fundamentals of Version Control and CI/CD pipelines. You will create a simple trading bot and automate its testing using GitHub Actions.
+ 
+ ## 🎯 Skills Learned
+ - \`Git Fundamentals\`
+ - \`GitHub Collaboration\`
+ - \`GitHub Actions\`
+ - \`Python Testing\`
+ 
+ ## Practicals Checklist
+ 1. Why Git Exists
+ 2. GitHub Collaboration
+ 3. Branching & Merging
+ 4. CI Basics
+ 5. Test Automation
+ 6. Continuous Delivery
+ 
+ ## Lab Instructions
+ 
+ ### Step 1: Initialize Git (Practical 1)
+ Open your terminal. We will create a project and track it.
+ \`\`\`bash
+ mkdir algo-bot
+ cd algo-bot
+ git init
+ \`\`\`
+ 
+ ### Step 2: Write "The Bot" (Practical 5)
+ Create a file named \`bot.py\` and paste this code:
+ \`\`\`python
+ import sys
+ 
+ def strategy(price):
+     if price < 100:
+         return "BUY"
+     return "HOLD"
+ 
+ if __name__ == "__main__":
+     # Test the function locally
+     signal = strategy(99)
+     print(f"Signal: {signal}")
+ \`\`\`
+ 
+ ### Step 3: Track Changes
+ \`\`\`bash
+ git add bot.py
+ git commit -m "Created trading bot logic"
+ \`\`\`
+ 
+ ### Step 4: Define CI Pipeline (Practical 4)
+ We want to test this automatically.
+ 1. Create a folder named \`.github\`.
+ 2. Inside it, create a folder named \`workflows\`.
+ 3. Create a file \`.github/workflows/ci.yml\` with this content:
+ 
+ \`\`\`yaml
+ name: Bot CI
+ on: [push]
+ jobs:
+   test:
+     runs-on: ubuntu-latest
+     steps:
+     - uses: actions/checkout@v3
+     - name: Set up Python
+       uses: actions/setup-python@v4
+       with:
+         python-version: '3.9'
+     - name: Run Logic Test
+       run: |
+         # This runs your bot.py logic in the cloud
+         python -c "from bot import strategy; assert strategy(99) == 'BUY'"
+ \`\`\`
+ 
+ ### Step 5: Push to GitHub (Practical 2)
+ 1. Go to GitHub.com and create a new repository named \`algo-bot\`.
+ 2. Run these commands (replace YOUR_USER):
+ \`\`\`bash
+ git remote add origin https://github.com/YOUR_USER/algo-bot.git
+ git branch -M main
+ git push -u origin main
+ \`\`\`
+ 
+ ### Step 6: Verify Automation
+ 1. Go to your GitHub Repo page.
+ 2. Click the **Actions** tab.
+ 3. You should see a workflow run named "Bot CI" with a ✅ Green Checkmark.
+ 
+ ## Outcome
+ You now have a professional CI pipeline. Every time you change your code, GitHub will automatically verify it works.`
             },
             {
                 id: 2,
@@ -524,67 +552,83 @@ You now have a CI pipeline. In future levels, this pipeline could deploy your bo
 
 ## Objective
 **Containerize your Bot.**
-"It works on my machine" is not a valid excuse in Finance. You need to package your trading bot into a standard unit (Container) that runs identically on your laptop, the server, and the cloud.
+In Level 1, you ran code on your laptop. But "It works on my machine" is not good enough for Finance.
+You must package your bot into a **Docker Container** - a standardized unit that runs the same way everywhere (Laptop, Server, Cloud).
 
 ## 🎯 Skills Learned
-- \`Dockerfile\`
-- \`Docker Compose\`
-- \`Container Lifecycle\`
+- \`Dockerfile Structure\`
+- \`Docker Build & Run\`
 - \`Environment Variables\`
-
-## The Mission
-You wrote a bot in Level 1. Now, package it so we can ship it.
+- \`Docker Compose\`
 
 ## Lab Instructions
 
 ### Step 1: Create a Dockerfile
-In your \`algo-bot\` repository, create a file named \`Dockerfile\` (no extension):
+1. Open your code editor (VS Code) to your \`algo-bot\` folder.
+2. Create a NEW file named \`Dockerfile\` (no file extension!).
+3. Paste the following exact content:
 
 \`\`\`dockerfile
-# Use a lightweight Python image
+# 1. Use a lightweight Python image as base
 FROM python:3.9-slim
 
-# Set working directory
+# 2. Set the working directory inside the container
 WORKDIR /app
 
-# Copy the bot code
+# 3. Copy your specific bot code files into the container
 COPY bot.py .
 
-# Command to run the bot
+# 4. Define the command to run when the container starts
 CMD ["python", "bot.py"]
 \`\`\`
 
 ### Step 2: Build the Image
+Open your terminal (Command Prompt or Terminal) and run:
+
 \`\`\`bash
+# 'docker build' tells Docker to create an image
+# '-t my-algo-bot' names the image
+# '.' tells it to look in the CURRENT folder
 docker build -t my-algo-bot .
 \`\`\`
 
-### Step 3: Run the Container
+*Wait for the process to finish. It implies it is downloading the python base image.*
+
+### Step 3: Run Your Container
+Now that you have the image, run it as a container:
+
 \`\`\`bash
 docker run --rm my-algo-bot
 \`\`\`
+*You should see your bot's output (e.g., "Signal: BUY") printed to the screen.*
 
-### Step 4: Define Services (Docker Compose)
-Real apps have dependencies. Create \`docker-compose.yml\`:
+### Step 4: Using Docker Compose
+Running long commands is annoying. Let's automate it using \`docker-compose.yml\`.
+1. Create a file named \`docker-compose.yml\`.
+2. Paste this:
 
 \`\`\`yaml
 version: '3.8'
 services:
   bot:
-    build: .
-    environment:
+    build: .             # Build from current directory
+    environment:         # Inject secrets / config
       - SIGNAL_THRESHOLD=100
-    command: python -c "import time; time.sleep(3600)"
+    command: python -c "import time; print('Bot Started'); time.sleep(3600)"
 \`\`\`
 
-### Step 5: Boot Up
+3. Run it in background mode:
 \`\`\`bash
 docker compose up -d
+\`\`\`
+
+4. Check if it's running:
+\`\`\`bash
 docker compose ps
 \`\`\`
 
 ## Outcome
-Your code is now portable. You can run \`docker compose up\` on any machine to start your trading system.`
+You have "Containerized" your application. You can now ship this code to any server in the world, and it is guaranteed to run exactly as it did here.`
             },
             {
                 id: 3,
@@ -598,37 +642,46 @@ Your code is now portable. You can run \`docker compose up\` on any machine to s
 
 ## Objective
 **Investigate Market Anomalies using Grafana.**
-The Trading Server exposes its internal metrics via Prometheus and visualizes them in Grafana. You are an External Analyst seeing odd behavior. Use the dashboards to catch the issue.
+You are an SRE (Site Reliability Engineer). The server provides internal health metrics. Your job is to access the **Grafana Dashboard** to visualize these metrics and identify why the exchange is slowing down.
 
 ## 🎯 Skills Learned
-- \`PromQL Querying\`
-- \`Grafana Dashboards\`
-- \`Latency Analysis\`
-- \`System Observability\`
-
-## The Mission
-Reports say the Exchange is slowing down. You have read-only access to the public Grafana dashboard. Find the metric that proves the latency spike.
+- \`Accessing Grafana\`
+- \`Building Dashboards\`
+- \`PromQL Queries\`
+- \`Correlating Metrics\`
 
 ## Lab Instructions
 
 ### Step 1: Access Grafana
-1. Open your browser to \`http://<SERVER_IP>:3000\`.
-2. Login with \`admin\` / \`admin\`.
+Grafana is a web-based dashboard tool running on your server.
+1. Open your web browser (Chrome/Edge).
+2. Type the following URL: \`http://localhost:3000\` (or http://<SERVER_IP>:3000).
+3. You will see a login screen.
+   - **Username**: \`admin\`
+   - **Password**: \`admin\` (Skip password change if prompted).
 
-### Step 2: Build a Custom Dashboard
-You suspect the "Order Rate" is too high.
-1. Click **Dashboards** -> **New Dashboard** -> **Add Visualization**.
-2. Select **Prometheus** as data source.
-3. Query: \`rate(exchange_orders_total[1m])\`.
-4. Label the panel "Global Order Rate".
+### Step 2: Create a New Dashboard
+1. On the left sidebar, verify you see an icon with 4 squares "Dashboards".
+2. Click **New** -> **New Dashboard**.
+3. Click **+ Add Visualization**.
 
-### Step 3: Correlate with Latency
-1. Add another panel.
-2. Query: \`histogram_quantile(0.99, rate(exchange_latency_bucket[1m]))\`.
-3. Observe: Does latency peak when Order Rate peaks?
+### Step 3: Query the Data (Prometheus)
+1. In the "Data source" dropdown, ensure **Prometheus** is selected.
+2. In the query box, enter this PromQL query to see the Order Rate:
+   \`rate(exchange_orders_total[1m])\`
+3. Click **Run Queries** (blue button). You should see a line chart appear.
+4. On the right panel, find "Panel options" -> "Title" and name it **"Global Order Rate"**.
+5. Click **Apply** (top right corner).
+
+### Step 4: Detect Latency Spikes
+1. Add another panel (Click the + icon in top navbar -> Add visualization).
+2. Enter query:
+   \`histogram_quantile(0.99, rate(exchange_latency_bucket[1m]))\`
+3. Name this panel **"99th Percentile Latency"**.
+4. **Compare**: Look at both charts. Do you see the latency Go UP when the Order Rate goes UP?
 
 ## Outcome
-You learned how to query a system's health without having code access.`
+You have successfully monitored a production system without looking at a single line of code.`
             },
             {
                 id: 4,
@@ -642,46 +695,61 @@ You learned how to query a system's health without having code access.`
 
 ## Objective
 **Tap into the raw data feed using Redis.**
-The Exchange broadcasts every price ticking on a public Redis Channel. You will build a "Tape Reader" client to subscribe and print these ticks in real-time.
+Web UIs are slow. Pro traders connect directly to the data pipe. The exchange publishes every trade to **Redis** (a super-fast in-memory database). You will use the Redis CLI to inspect this raw feed.
 
 ## 🎯 Skills Learned
-- \`Redis CLI\`
-- \`Pub/Sub Architecture\`
-- \`Key-Value Stores\`
-- \`Real-time Data Streams\`
-
-## The Mission
-You need the fastest possible price feed. The Web UI is too slow. You will connect directly to the Redis port (6379) exposed by the server.
+- \`Redis CLI Standards\`
+- \`Identifying Pub/Sub Channels\`
+- \`Subscribing to Real-Time Data\`
 
 ## Lab Instructions
 
-### Step 1: Install Redis Tools
-- Windows: \`choco install redis-64\`
-- Mac/Linux: \`brew install redis\` or \`apt install redis-tools\`
-- Or use Python: \`pip install redis\`
+### Step 1: Open Terminal
+You need a command line interface that has \`redis-cli\` installed.
+*If using our Docker setup, you can exec into the redis container:*
+\`docker exec -it tradingserver-redis-1 redis-cli\`
 
-### Step 2: Connect from Terminal
-\`\`\`bash
-redis-cli -h <SERVER_IP> -p 6379
-> PING
-PONG
+### Step 2: Ping the Server
+1. In the terminal, verify connection:
+   \`ping\`
+   *Response should be: PONG*
+
+### Step 3: Subscribe to Market Data
+1. Type the following command to listen to the feed:
+   \`SUBSCRIBE market_data\`
+   
+2. Press Enter.
+3. Wait... if the market is active, you will see JSON text scrolling rapidly:
+   \`1) "message"\`
+   \`2) "market_data"\`
+   \`3) "{\"symbol\": \"AAPL\", \"price\": 150.23, ...}"\`
+
+### Challenge: Filter with Script
+Manual reading is hard. Let's write a python script.
+1. Create \`tape_reader.py\`:
+
+\`\`\`python
+import redis
+import json
+
+# Connect to Redis (localhost, port 6379, db 0)
+r = redis.Redis(host='localhost', port=6379, db=0)
+
+# Create a Pub/Sub object
+p = r.pubsub()
+p.subscribe('market_data')
+
+print("Listening for AAPL trades > $150...")
+
+for message in p.listen():
+    if message['type'] == 'message':
+        data = json.loads(message['data'])
+        if data['symbol'] == 'AAPL' and data['price'] > 150:
+            print(f"💰 BIG TRADE: {data['symbol']} @ {data['price']}")
 \`\`\`
-
-### Step 3: Subscribe to the Feed
-\`\`\`bash
-> SUBSCRIBE market_data
-\`\`\`
-Keep this running. Request a "Simulation Start" from the Web Portal. You should see JSON messages flying by:
-\`{"symbol": "AAPL", "price": 150.23, "ts": 16789...}\`
-
-### Challenge
-Write a Python script \`tape_reader.py\`:
-1. Connects to Redis.
-2. Subscribes to \`market_data\`.
-3. Prints **only** AAPL trades > $150.
 
 ## Outcome
-You bypassed the UI to get raw, low-latency data directly from the infrastructure.`
+You bypassed the slow UI and connected directly to the high-speed backend data bus.`
             },
             {
                 id: 5,
@@ -695,53 +763,73 @@ You bypassed the UI to get raw, low-latency data directly from the infrastructur
 
 ## Objective
 **Build an automated Trading Client.**
-You will write a script that connects to the Exchange's API to make trading decisions automatically.
+Humans are too slow. You will write a Python script that automatically decides when to buy or sell based on price data. This is "Algorithmic Trading".
 
 ## 🎯 Skills Learned
-- \`REST API Polling\`
-- \`WebSocket Streaming\`
-- \`Python Requests\`
-- \`AsyncIO / Await\`
-
-## The Mission
-Your strategy is simple: "Buy low, Sell high".
-1.  **Poll** the Snapshot (REST) to find a starting price.
-2.  **Listen** to the Stream (WebSocket) for updates.
-3.  **Execute** an Order (REST) when the price drops.
+- \`Fetching Data (REST GET)\`
+- \`Streaming Data (WebSocket)\`
+- \`Placing Orders (REST POST)\`
+- \`Async Python\`
 
 ## Lab Instructions
 
-### Step 1: Get the Snapshot (REST)
-Endpoint: \`GET http://<SERVER_IP>/marketdata/api/book/AAPL\`
-Response: \`{"bids": [...], "asks": [...]}\`
+### Step 1: Get the Current Price (Snapshot)
+REST APIs are like loading a web page. You ask for data, you get data.
+1. Create \`trader.py\`.
+2. Add code to get the Order Book for AAPL:
 
 \`\`\`python
 import requests
-res = requests.get("http://<SERVER_IP>/marketdata/api/book/AAPL")
-print(res.json())
+
+# 1. Define the URL
+url = "http://localhost:8000/marketdata/api/book/AAPL"
+
+# 2. Make the request
+response = requests.get(url)
+
+# 3. Print the result
+print("Current Order Book:")
+print(response.json())
 \`\`\`
 
-### Step 2: Listen to Stream (WebSocket)
-Endpoint: \`ws://<SERVER_IP>/marketdata/ws/level1\`
+### Step 2: Listen for Live Updates (WebSocket)
+WebSockets are like a phone call. The connection stays open.
+Add this logic (needs \`pip install websockets asyncio\`):
 
 \`\`\`python
-import websockets, asyncio
+import websockets
+import asyncio
 
 async def listen():
-    async with websockets.connect("ws://<SERVER_IP>/marketdata/ws/level1") as ws:
+    # Connect to the live stream
+    async with websockets.connect("ws://localhost:8000/marketdata/ws/level1") as ws:
+        print("Connected to Feed...")
         while True:
+            # Wait for next message
             msg = await ws.recv()
-            print(f"Update: {msg}")
+            print(f"Live Update: {msg}")
 
 asyncio.run(listen())
 \`\`\`
 
-### Step 3: Execute Order (REST)
-Endpoint: \`POST http://<SERVER_IP>/ecn/api/orders\`
-Payload: \`{"symbol": "AAPL", "side": "BUY", "qty": 100, "price": 149.00}\`
+### Step 3: Place a Trade (The Algo)
+Combine logic: "If price drops, BUY".
+Endpoint: \`POST /ecn/api/orders\`
+
+\`\`\`python
+def execute_trade():
+    order = {
+        "symbol": "AAPL",
+        "side": "BUY",
+        "qty": 10,
+        "price": 149.50
+    }
+    res = requests.post("http://localhost:8000/ecn/api/orders", json=order)
+    print(f"Order Status: {res.status_code}")
+\`\`\`
 
 ## Outcome
-You have built a fully functional Algo Trader running on your machine, interacting with the remote exchange.`
+You have built a robot that interacts with the financial exchange automatically.`
             },
             {
                 id: 6,
