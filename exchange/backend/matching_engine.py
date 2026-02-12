@@ -51,8 +51,21 @@ class MatchingEngine:
         if order.status == 'New':
              pass
         
-        if order.type == '1' and order.qty > 0:
-             await self._send_cancel(order, "Market Order Partial Fill / No Liquidity")
+    async def cancel_order_by_id(self, symbol: str, order_id: str):
+        """
+        Cancels an order by ID and emits Execution Report.
+        """
+        book = self.get_order_book(symbol)
+        if not book: return
+        
+        cancelled_order = book.cancel_order(order_id)
+        if cancelled_order:
+             logger.info(f"Cancelled Order {order_id} via Request")
+             await self._send_cancel(cancelled_order, "Canceled by Request")
+             # Publish snapshot update
+             await self._publish_snapshot(book)
+        else:
+             logger.warning(f"Cancel Request for {order_id}: Not Found in Book")
 
     async def reset(self):
         """Clears all order books and state."""

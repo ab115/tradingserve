@@ -11,6 +11,9 @@ class MarketDataPublisher:
         self.kafka_producer = None
         self.redis_client = None
 
+        self._redis_host = REDIS_HOST
+        self._redis_port = REDIS_PORT
+
     def connect(self):
         # Initialize Kafka (Redpanda)
         if not self.kafka_producer:
@@ -20,7 +23,7 @@ class MarketDataPublisher:
                     value_serializer=lambda v: json.dumps(v).encode('utf-8'),
                     key_serializer=lambda k: k.encode('utf-8'),
                     api_version=(2, 0, 2),
-                    api_version_auto_timeout_ms=3000, # Fail fast (3s)
+                    api_version_auto_timeout_ms=3000, 
                     request_timeout_ms=3000
                 )
                 logger.info(f"Connected to Redpanda at {REDPANDA_BROKER}")
@@ -28,11 +31,14 @@ class MarketDataPublisher:
                 logger.error(f"Failed to connect to Redpanda: {e}")
 
         # Initialize Redis
+        self._ensure_redis()
+
+    def _ensure_redis(self):
         if not self.redis_client:
             try:
-                self.redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
+                self.redis_client = redis.Redis(host=self._redis_host, port=self._redis_port, db=0, decode_responses=True)
                 self.redis_client.ping()
-                logger.info(f"Connected to Redis at {REDIS_HOST}:{REDIS_PORT}")
+                logger.info(f"Connected to Redis at {self._redis_host}:{self._redis_port}")
             except Exception as e:
                 logger.error(f"Failed to connect to Redis: {e}")
                 self.redis_client = None
@@ -54,6 +60,7 @@ class MarketDataPublisher:
                 logger.error(f"Error publishing to Redpanda: {e}")
         
         # 2. Publish to Redis (Real-time Cache)
+        self._ensure_redis()
         if self.redis_client:
             try:
                 pipe = self.redis_client.pipeline()

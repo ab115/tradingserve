@@ -1,4 +1,4 @@
-import { Share2, Box, Activity, Disc, Zap, Monitor, Shield, Brain, Sparkles, Building2, Cloud, Layout } from 'lucide-react';
+import { Share2, Box, Activity, Disc, Zap, Monitor, Shield, Brain, Sparkles, Building2, Cloud, Layout, Rocket, Bug } from 'lucide-react';
 
 export interface LabContent {
     id: string;
@@ -213,47 +213,51 @@ You have "Containerized" your application. You can now ship this code to any ser
 > **Job Track**: 🚨 Site Reliability Engineer (SRE)
 
 ## Objective
-**Investigate Market Anomalies using Grafana.**
-You are an SRE (Site Reliability Engineer). The server provides internal health metrics. Your job is to access the **Grafana Dashboard** to visualize these metrics and identify why the exchange is slowing down.
+**Monitor the Pulse of the Market.**
+In a distributed system, you cannot log into every server to check logs. You need a centralized **Cockpit**.
+In this lab, you will connect a remote **Grafana Dashboard** to your running Trading Server and visualize real-time metrics.
 
 ## 🎯 Skills Learned
-- \`Accessing Grafana\`
-- \`Building Dashboards\`
-- \`PromQL Queries\`
-- \`Correlating Metrics\`
+- \`Prometheus Architecture\`
+- \`Grafana Dashboards\`
+- \`System Metrics (CPU/Mem)\`
+- \`Business Metrics (Order Rate/PnL)\`
 
 ## Lab Instructions
 
-### Step 1: Access Grafana
-Grafana is a web-based dashboard tool running on your server.
-1. Open your web browser (Chrome/Edge).
-2. Type the following URL: \`http://localhost:3000\` (or http://<SERVER_IP>:3000).
-3. You will see a login screen.
-   - **Username**: \`admin\`
-   - **Password**: \`admin\` (Skip password change if prompted).
+### Activity 3.1: The Handshake
+You are the SRE. Your trading cluster is running on **Node A**. Your dashboard is on **Node B**.
+1. **Identify Node A**: In this demo, Node A is \`localhost\`.
+2. **Access Grafana**: Open [Grafana Dashboard](http://localhost:3030)
+   - **User**: \`admin\`
+   - **Pass**: \`admin\`
+3. **Connect Data Source**:
+   - Click **Connections** -> **Data Sources** -> **Add new**.
+   - Select **Prometheus**.
+   - **Connection URL** (Crucial Step):
+     - ❌ **Do NOT use** \`http://localhost:9090\` (This refers to the Grafana container itself).
+     - ✅ **USE**: \`http://fintech_prometheus:9090\`
+     - *Explanation: Since Grafana is running inside Docker, it must use the internal container name to talk to Prometheus.*
+   - Click **Save & Test**. You should see "Successfully queried the Prometheus API".
 
-### Step 2: Create a New Dashboard
-1. On the left sidebar, verify you see an icon with 4 squares "Dashboards".
-2. Click **New** -> **New Dashboard**.
-3. Click **+ Add Visualization**.
+### Activity 3.2: System Vitals
+Let's see if our containers are healthy.
+1. Create a **New Dashboard**.
+2. Add Visualization.
+3. Query: \`rate(container_cpu_usage_seconds_total{name=~"exchange|ecngateway"}[1m])\`
+4. Title: **"Core Service CPU Load"**.
+5. Save.
 
-### Step 3: Query the Data (Prometheus)
-1. In the "Data source" dropdown, ensure **Prometheus** is selected.
-2. In the query box, enter this PromQL query to see the Order Rate:
-   \`rate(exchange_orders_total[1m])\`
-3. Click **Run Queries** (blue button). You should see a line chart appear.
-4. On the right panel, find "Panel options" -> "Title" and name it **"Global Order Rate"**.
-5. Click **Apply** (top right corner).
-
-### Step 4: Detect Latency Spikes
-1. Add another panel (Click the + icon in top navbar -> Add visualization).
-2. Enter query:
-   \`histogram_quantile(0.99, rate(exchange_latency_bucket[1m]))\`
-3. Name this panel **"99th Percentile Latency"**.
-4. **Compare**: Look at both charts. Do you see the latency Go UP when the Order Rate goes UP?
+### Activity 3.3: The Business Pulse
+Now let's see money moving.
+1. Add another Panel.
+2. Query: \`rate(http_requests_total{handler="/orders"}[5m])\`
+   *This shows the rate of new orders hitting the ECN.*
+3. Title: **"Order Inflow Rate"**.
+4. **Insight**: If CPU goes up but Orders go down, you have a bug!
 
 ## Outcome
-You have successfully monitored a production system without looking at a single line of code.`
+You have built a "Glass Pane" into your black-box system.`
     },
     {
         id: '04',
@@ -831,73 +835,88 @@ You implemented a **Control Loop**, the fundamental building block of Kubernetes
     {
         id: '12',
         title: "The Trader Desktop",
-        role: "Frontend Architect",
+        role: "Professional Trader",
         icon: Layout,
-        skills: ["Grid Layouts", "Drag & Drop", "Professional UI"],
-        md: `# Level 12: The Trader Desktop (Capstone)
+        skills: ["React", "WebSocket", "SaaS UI"],
+        md: `# Level 12: The Trader Desktop
 
-> **Job Track**: 🎨 Frontend Architect / Full Stack Engineer
+> **Job Track**: 🖥️ Frontend Engineer / UX Specialist
 
 ## Objective
 **Build the Ultimate Trading Workstation.**
-Real traders don't switch browser tabs. They need everything in one view. You will build a professional, **Resizable & Draggable** Trader Desktop that combines all your previous tools (Blotter, Charts, News) into a single "Command Center".
+Professional traders need speed and density. You will build a "Glass" interface that mimics a Bloomberg Terminal running on the web.
 
 ## 🎯 Skills Learned
-- \`Complex Grid Layouts\`
-- \`React Resizable Panels\`
-- \`Component Composition\`
-- \`Professional UX Design\`
+- \`Advanced React Layouts\`
+- \`Performance Optimization\`
+- \`Real-time Charting\`
+- \`Complex State Management\`
 
 ## The Mission
-Your desk layout is your weapon. Build a dashboard where you can resize the Chart to focus on technicals, or expand the News Feed during earnings calls.
-
-## Lab Instructions
-
-### Step 1: The Layout Library
-We don't build Drag & Drop from scratch. we use professional libraries.
-\`\`\`bash
-npm install react-resizable-panels lucide-react
-\`\`\`
-
-### Step 2: The Desktop Component
-Create \`TraderDesktop.tsx\`. This acts as the container.
-
-\`\`\`tsx
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-
-export default function TraderDesktop() {
-  return (
-    <div className="h-full bg-slate-900 text-white">
-      <PanelGroup direction="horizontal">
-        {/* Left: Market Data */}
-        <Panel defaultSize={25} minSize={20}>
-           <MarketDataList />
-        </Panel>
-        
-        <PanelResizeHandle className="w-1 bg-slate-700 hover:bg-cyan-500 transition-colors" />
-        
-        {/* Center: Charts & Execution */}
-        <Panel minSize={30}>
-           <PanelGroup direction="vertical">
-              <Panel defaultSize={60}>
-                 <TradingChart />
-              </Panel>
-              <PanelResizeHandle className="h-1 bg-slate-700 hover:bg-cyan-500" />
-              <Panel>
-                 <OrderEntryForm />
-              </Panel>
-           </PanelGroup>
-        </Panel>
-      </PanelGroup>
-    </div>
-  );
-}
-\`\`\`
-
-### Step 3: Integrating Components
-Import your components from previous labs (Blotter, Repo, etc.) and place them into the Panels.
+Integrate all previous labs into a single "Single Pane of Glass" application.
+- Real-time Blotter
+- Live Charting
+- Algo Controls
+- AI Insights
 
 ## Outcome
-You have built a specialized, high-performance workspace tool that rivals professional Bloomberg or Refinitiv terminals.`
+You have built a commercial-grade UI that can handle the firehose of financial data.`
+    },
+    {
+        id: '13',
+        title: "The Green Hornet",
+        role: "Greenfield Engineer",
+        icon: Rocket,
+        skills: ["System Design", "SRE", "Data Eng", "Quant", "AI"],
+        md: `# Level 13: The Green Hornet
+
+> **Job Track**: 🚀 Greenfield Architect
+
+## Objective
+**Prove Your Worth.**
+You have learned the skills. Now apply them.
+"The Green Hornet" is a collection of 5 "Start from Scratch" projects designed to test your engineering mettle across different disciplines.
+
+## 🎯 The Projects
+1.  **The Watchtower** (SRE): Build a Log Aggregator.
+2.  **The Pipeline** (Data): Build a Real-time ETL stream.
+3.  **The Matcher** (Quant): Build a Limit Order Book.
+4.  **The Traffic Cop** (Cloud): Build a Layer 7 Load Balancer.
+5.  **The Analyst** (AI): Build a Semantic Search Engine.
+
+## Instructions
+Select a project card from the Interactive Workspace to view the detailed Problem Statement, Sample Inputs, and Verification Scenarios.
+
+## Outcome
+A portfolio of self-contained, complex systems that prove you are ready for the industry.`
+    },
+    {
+        id: '14',
+        title: "The Brown Bear",
+        role: "Bug Hunter",
+        icon: Bug,
+        skills: ["Debugging", "Profiling", "Refactoring", "Testing"],
+        md: `# Level 14: The Brown Bear
+
+> **Job Track**: 🕵️‍♂️ Maintenance Engineer / SRE
+
+## Objective
+**Wrestle the Beast.**
+You aren't building from scratch ("Greenfield"). You are entering the "Brownfield".
+"The Brown Bear" is a collection of existing, broken projects. Your job is to tame them.
+
+## 🎯 The Bugs
+1.  **The Leaky Bucket** (SRE): A server that crashes every 10 minutes.
+2.  **The Phantom Trade** (Quant): Money disappearing due to concurrency bugs.
+3.  **The Slow Tape** (Data): An O(N²) algorithm that lags the market.
+4.  **The Broken Ledger** (Backend): Floating point math errors losing pennies.
+5.  **The Lazy Pivot** (Frontend): A dashboard that freezes the browser.
+
+## Instructions
+Select a bug card from the Interactive Workspace to view the source code.
+Identify the flaw, download the code, fix it, and verify it locally.
+
+## Outcome
+You learned that reading code is harder than writing it, and "it works on my machine" is a lie.`
     }
 ];

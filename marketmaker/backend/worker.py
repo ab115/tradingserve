@@ -54,13 +54,26 @@ def on_fill(ticker: str, side: str, qty: int, price: float):
     except Exception as e:
         logger.error(f"Failed to update inventory: {e}")
 
+# Sync Redis Client for FIX Thread
+sync_redis_client = None
+
+def get_sync_redis():
+    global sync_redis_client
+    if not sync_redis_client:
+        import redis as sync_redis
+        # Use a single connection pool
+        pool = sync_redis.ConnectionPool(host=config.REDIS_HOST, port=config.REDIS_PORT, decode_responses=False)
+        sync_redis_client = sync_redis.Redis(connection_pool=pool)
+    return sync_redis_client
+
 def on_fix_event(event_type: str, data: dict):
     # Publish to Redis 'updates:events'
-    # We need a sync redis client or fire and forget
+    # Use global sync client to avoid connection leak
     try:
-        import redis as sync_redis
-        r = sync_redis.Redis(host=config.REDIS_HOST, port=config.REDIS_PORT, decode_responses=False)
-        payload = json.dumps({"type": "EVENT", "subtype": event_type, "data": data})
+        r = get_sync_redis()
+        # Data often contains timestamps or other non-serializable objects?
+        # Check data serialization safety
+        payload = json.dumps({"type": "EVENT", "subtype": event_type, "data": data}, default=str)
         r.publish("updates:events", payload)
     except Exception as e:
         logger.error(f"Failed to publish event: {e}")
@@ -245,9 +258,19 @@ async def discover_active_tickers():
             count += 1
         
         if count == 0 and len(new_tickers) == 0:
-             logger.info("No active tickers found on Exchange. Idling...")
+             logger.info("No active tickers found on Exchange. Adding Defaults...")
+             for t in ["AAPL", "MSFT"]:
+                 active_tickers.add(t)
+                 await md_worker.subscribe_ticker(t)
+                 logger.info(f"Broadcasting Default Ticker: {t}")
         else:
              logger.info(f"Discovery Complete. Active Tickers: {active_tickers}")
+             # Ensure defaults are there too?
+             for t in ["AAPL", "MSFT"]:
+                 if t not in active_tickers:
+                     active_tickers.add(t)
+                     await md_worker.subscribe_ticker(t)
+                     logger.info(f"Broadcasting Default Ticker: {t}")
 
     except Exception as e:
         logger.error(f"Discovery Error: {e}")

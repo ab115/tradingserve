@@ -14,7 +14,7 @@ export default defineConfig({
         alias: {
             '@labs': process.env.DOCKER_BUILD
                 ? path.resolve(__dirname, './src/labs_mirror')
-                : path.resolve(__dirname, '../../../labs')
+                : path.resolve(__dirname, '../../labs')
         }
     },
     server: {

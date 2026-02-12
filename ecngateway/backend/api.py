@@ -11,9 +11,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from prometheus_fastapi_instrumentator import Instrumentator
+Instrumentator().instrument(app).expose(app)
 
 # Initialize Async Redis
 r = redis.Redis(

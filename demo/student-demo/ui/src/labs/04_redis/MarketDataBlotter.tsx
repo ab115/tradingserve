@@ -21,9 +21,9 @@ export default function MarketDataBlotter() {
         ws.onmessage = (e) => {
             try {
                 const data = JSON.parse(e.data);
-                if (data.type === 'market_data' || data.symbol) {
+                if (data.type === 'market_data' || data.symbol || data.ticker) {
                     // Normalize data structure if needed
-                    const symbol = data.symbol;
+                    const symbol = data.symbol || data.ticker;
                     const price = parseFloat(data.price || data.last || 0);
 
                     if (!symbol || !price) return;
@@ -68,25 +68,25 @@ export default function MarketDataBlotter() {
     }, []);
 
     return (
-        <div className="h-full flex flex-col bg-[#0a0f1c] text-xs font-mono">
+        <div className="h-full flex flex-col bg-[#0a0f1c] text-xs font-mono overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-3 py-2 bg-slate-900 border-b border-slate-800 text-slate-400 font-bold tracking-wider">
-                <span className="flex items-center gap-2"><Activity size={14} className="text-blue-400" /> REAL-TIME QUOTES</span>
-                <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20">LIVE STREAM</span>
+            <div className="flex items-center justify-between px-3 py-2 bg-slate-900 border-b border-slate-800 text-slate-400 font-bold tracking-wider shrink-0">
+                <span className="flex items-center gap-2"><Activity size={14} className="text-blue-400" /> QUOTES</span>
+                <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20 hidden sm:inline-block">LIVE</span>
             </div>
 
-            {/* Grid Header */}
-            <div className="grid grid-cols-4 px-3 py-1.5 bg-slate-800/50 text-slate-500 border-b border-slate-800 font-bold uppercase text-[10px]">
+            {/* Grid Header - Responsive */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 px-3 py-1.5 bg-slate-800/50 text-slate-500 border-b border-slate-800 font-bold uppercase text-[10px] shrink-0">
                 <div>Symbol</div>
                 <div className="text-right">Last</div>
-                <div className="text-right">Bid / Ask</div>
+                <div className="text-right hidden sm:block">Bid / Ask</div>
                 <div className="text-right">Chg</div>
             </div>
 
-            {/* Ticker List */}
-            <div className="flex-1 overflow-y-auto">
+            {/* Ticker List - Scrollable */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {Object.values(tickers).length === 0 && (
-                    <div className="p-4 text-center text-slate-600 italic">Waiting for broadcast...</div>
+                    <div className="p-4 text-center text-slate-600 italic">Waiting...</div>
                 )}
 
                 {Object.values(tickers).map((t) => {
@@ -96,10 +96,10 @@ export default function MarketDataBlotter() {
                             'text-slate-300 transition-colors duration-500';
 
                     return (
-                        <div key={t.symbol} className={`grid grid-cols-4 px-3 py-2 border-b border-slate-800/50 hover:bg-white/5 items-center ${colorClass}`}>
-                            <div className="font-bold text-white">{t.symbol}</div>
+                        <div key={t.symbol} className={`grid grid-cols-3 sm:grid-cols-4 px-3 py-2 border-b border-slate-800/50 hover:bg-white/5 items-center ${colorClass}`}>
+                            <div className="font-bold text-white truncate">{t.symbol}</div>
                             <div className="text-right font-mono">{t.price.toFixed(2)}</div>
-                            <div className="text-right text-slate-500 text-[10px]">
+                            <div className="text-right text-slate-500 text-[10px] hidden sm:block">
                                 {t.bid.toFixed(2)} / {t.ask.toFixed(2)}
                             </div>
                             <div className="text-right flex justify-end">

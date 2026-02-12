@@ -641,47 +641,51 @@ You have "Containerized" your application. You can now ship this code to any ser
 > **Job Track**: 🚨 Site Reliability Engineer (SRE)
 
 ## Objective
-**Investigate Market Anomalies using Grafana.**
-You are an SRE (Site Reliability Engineer). The server provides internal health metrics. Your job is to access the **Grafana Dashboard** to visualize these metrics and identify why the exchange is slowing down.
+**Monitor the Pulse of the Market.**
+In a distributed system, you cannot log into every server to check logs. You need a centralized **Cockpit**.
+In this lab, you will connect a remote **Grafana Dashboard** to your running Trading Server and visualize real-time metrics.
 
 ## 🎯 Skills Learned
-- \`Accessing Grafana\`
-- \`Building Dashboards\`
-- \`PromQL Queries\`
-- \`Correlating Metrics\`
+- \`Prometheus Architecture\`
+- \`Grafana Dashboards\`
+- \`System Metrics (CPU/Mem)\`
+- \`Business Metrics (Order Rate/PnL)\`
 
 ## Lab Instructions
 
-### Step 1: Access Grafana
-Grafana is a web-based dashboard tool running on your server.
-1. Open your web browser (Chrome/Edge).
-2. Type the following URL: \`http://localhost:3000\` (or http://<SERVER_IP>:3000).
-3. You will see a login screen.
-   - **Username**: \`admin\`
-   - **Password**: \`admin\` (Skip password change if prompted).
+### Activity 3.1: The Handshake
+You are the SRE. Your trading cluster is running on **Node A**. Your dashboard is on **Node B**.
+1. **Identify Node A**: In this demo, Node A is \`localhost\`.
+2. **Access Grafana**: Open \`http://localhost:3030\`
+   - **User**: \`admin\`
+   - **Pass**: \`admin\`
+3. **Connect Data Source**:
+   - Click **Connections** -> **Data Sources** -> **Add new**.
+   - Select **Prometheus**.
+   - **Connection URL** (Crucial Step):
+     - ❌ **Do NOT use** \`http://localhost:9090\` (This refers to the Grafana container itself).
+     - ✅ **USE**: \`http://fintech_prometheus:9090\`
+     - *Explanation: Since Grafana is running inside Docker, it must use the internal container name to talk to Prometheus.*
+   - Click **Save & Test**. You should see "Successfully queried the Prometheus API".
 
-### Step 2: Create a New Dashboard
-1. On the left sidebar, verify you see an icon with 4 squares "Dashboards".
-2. Click **New** -> **New Dashboard**.
-3. Click **+ Add Visualization**.
+### Activity 3.2: System Vitals
+Let's see if our containers are healthy.
+1. Create a **New Dashboard**.
+2. Add Visualization.
+3. Query: \`rate(container_cpu_usage_seconds_total{name=~"exchange|ecngateway"}[1m])\`
+4. Title: **"Core Service CPU Load"**.
+5. Save.
 
-### Step 3: Query the Data (Prometheus)
-1. In the "Data source" dropdown, ensure **Prometheus** is selected.
-2. In the query box, enter this PromQL query to see the Order Rate:
-   \`rate(exchange_orders_total[1m])\`
-3. Click **Run Queries** (blue button). You should see a line chart appear.
-4. On the right panel, find "Panel options" -> "Title" and name it **"Global Order Rate"**.
-5. Click **Apply** (top right corner).
-
-### Step 4: Detect Latency Spikes
-1. Add another panel (Click the + icon in top navbar -> Add visualization).
-2. Enter query:
-   \`histogram_quantile(0.99, rate(exchange_latency_bucket[1m]))\`
-3. Name this panel **"99th Percentile Latency"**.
-4. **Compare**: Look at both charts. Do you see the latency Go UP when the Order Rate goes UP?
+### Activity 3.3: The Business Pulse
+Now let's see money moving.
+1. Add another Panel.
+2. Query: \`rate(http_requests_total{handler="/orders"}[5m])\`
+   *This shows the rate of new orders hitting the ECN.*
+3. Title: **"Order Inflow Rate"**.
+4. **Insight**: If CPU goes up but Orders go down, you have a bug!
 
 ## Outcome
-You have successfully monitored a production system without looking at a single line of code.`
+You have built a "Glass Pane" into your black-box system.`
             },
             {
                 id: 4,

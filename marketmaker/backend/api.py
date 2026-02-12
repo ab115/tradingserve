@@ -62,6 +62,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from prometheus_fastapi_instrumentator import Instrumentator
+Instrumentator().instrument(app).expose(app)
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []

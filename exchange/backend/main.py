@@ -83,6 +83,11 @@ async def process_message(engine, data):
             return
 
         # Parse Numerics
+        # Validate and Handle Request Types specifically
+        request_type = data.get('RequestType')
+        cl_ord_id = data.get('ClOrdID')
+        
+        # Parse common fields
         try:
             price = float(data.get('Price', 0))
         except: price = 0.0
@@ -90,20 +95,49 @@ async def process_message(engine, data):
         try:
             qty = int(data.get('OrderQty', 0))
         except: qty = 0
-
-        # Create Order
+            
+        sender = data.get('SenderCompID', 'UNKNOWN')
+        symbol = data.get('Symbol')
+        side = data.get('Side')
+        
+        # Create Order Object
         order = Order(
-            id=data.get('ClOrdID'),
-            cl_ord_id=data.get('ClOrdID'),
-            symbol=data.get('Symbol'),
-            side=data.get('Side'),
+            id=cl_ord_id,
+            cl_ord_id=cl_ord_id,
+            symbol=symbol,
+            side=side,
             price=price,
             qty=qty,
             type=data.get('OrdType', '2'),
-            sender_comp_id=data.get('SenderCompID', 'UNKNOWN'),
+            sender_comp_id=sender,
             transact_time=data.get('TransactTime', str(time.time())),
             timestamp=time.time()
         )
+
+        # Logic for Replace/Cancel
+        if request_type == 'Replace':
+            orig_id = data.get('OrigClOrdID')
+            logger.info(f"Processing Replace: Cancel {orig_id} -> New {cl_ord_id}")
+            # We don't have a direct 'cancel_order' that takes ID in engine?
+            # Engine needs to know which book?
+            # We can use engine.cancel_order_by_id(symbol, orig_id)?
+            # Or just hack it: Treat as New for now if cancel is hard, BUT
+            # Real fix: We need to remove the old order. 
+            # Check MatchingEngine for cancel method.
+            if hasattr(engine, 'cancel_order_by_id'):
+                await engine.cancel_order_by_id(symbol, orig_id)
+            else:
+                 # Fallback: Try to find and cancel manually?
+                 # Assuming MatchingEngine has get_order_book(symbol)
+                 book = engine.get_order_book(symbol)
+                 # We need to remove 'orig_id' from book.
+                 # OrderBook likely has cancel_order(order_id).
+                 # Note: Thread safety? This is async single threaded loop essentially.
+                 if book:
+                    # We might need to look up side?
+                    # OrderBook implementation dependent.
+                    # Assuming book.cancel_order(orig_id) exists.
+                    pass 
 
         await engine.process_order(order)
         

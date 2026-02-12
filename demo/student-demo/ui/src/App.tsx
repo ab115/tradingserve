@@ -1,8 +1,8 @@
 import React, { useState, useEffect, Suspense } from 'react';
-import { Code, Database, Activity, Brain, Server, Shield, FileText, Play, Layout, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Server, Box, Activity, Disc, Zap, Monitor, Shield, Brain, Sparkles, Building2, Cloud, CheckCircle, Layout, Rocket, Bug, Database, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // --- TYPES ---
-type LabId = '01' | '02' | '03' | '04' | '05' | '06' | '07' | '08' | '09' | '10' | '11' | '12';
+type LabId = '01' | '02' | '03' | '04' | '05' | '06' | '07' | '08' | '09' | '10' | '11' | '12' | '13' | '14';
 
 interface LabConfig {
     id: LabId;
@@ -89,54 +89,70 @@ const LiveTerminal = ({ wsEndpoint, title }: { wsEndpoint: string, title: string
 // Lazy load components
 const CiCdController = React.lazy(() => import('./labs/01_cicd/CiCdController'));
 const AlgoController = React.lazy(() => import('./labs/05_algo/AlgoController'));
-const Blotter = React.lazy(() => import('@labs/06_glass/Blotter'));
+// const Blotter = React.lazy(() => import('./labs/06_glass/Blotter'));
 const AnalystController = React.lazy(() => import('./labs/08_brain/AnalystController'));
 const RagController = React.lazy(() => import('./labs/09_rag/RagController'));
 const FundController = React.lazy(() => import('./labs/10_fund/FundController'));
-const HomeSplash = React.lazy(() => import('./HomeSplash'));
 const TraderDesktop = React.lazy(() => import('./TraderDesktop'));
 
+const MarketDataBlotter = React.lazy(() => import('./labs/04_redis/MarketDataBlotter'));
+const KafkaStream = React.lazy(() => import('./labs/07_kafka/KafkaStream'));
+const ObservabilityDashboard = React.lazy(() => import('./labs/03_orchestration/ObservabilityDashboard'));
+const ContainerManager = React.lazy(() => import('./labs/02_docker/ContainerManager'));
+const CloudDashboard = React.lazy(() => import('./labs/11_cloud/CloudDashboard'));
+const GreenHornet = React.lazy(() => import('./labs/13_green_hornet/GreenHornet'));
+const LegacyLab = React.lazy(() => import('./labs/14_legacy/LegacyLab'));
+
 const UnifiedLabView = React.lazy(() => import('./UnifiedLabView'));
+const HomePage = React.lazy(() => import('./HomePage'));
 
 // --- MAIN APP ---
 
+// ... imports
+import { TourController } from './TourController';
+import { HelpCircle } from 'lucide-react';
+
 function App() {
     const [activeLab, setActiveLab] = useState<LabId | 'HOME'>('HOME');
-    const [viewMode, setViewMode] = useState<'CODE' | 'LIVE' | 'GUIDED'>('GUIDED'); // Default to Guided for better UX
+    const [viewMode, setViewMode] = useState<'CODE' | 'LIVE' | 'GUIDED'>('GUIDED');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
+    // Tour Trigger Ref
+    const startTourRef = React.useRef<() => void>(() => { });
+
     const labs: LabConfig[] = [
-        { id: '01', title: 'CI/CD Pipeline', icon: Code, component: () => <CiCdController /> },
-        { id: '02', title: 'Docker Container', icon: Server, component: () => <div className="p-10 text-center text-slate-400">Visualization: Build Log Terminal</div> },
-        { id: '03', title: 'Observability', icon: Activity, component: () => <div className="p-10 text-center text-slate-400">Running on Grafana Port 3000</div> },
-        { id: '04', title: 'Redis Tape', icon: Database, component: () => <LiveTerminal wsEndpoint={`ws://${window.location.hostname}:8001/ws/redis`} title="Redis Monitor (6379)" /> },
-        { id: '05', title: 'Algo Trader', icon: Play, component: () => <AlgoController /> },
-        { id: '06', title: 'React Blotter', icon: FileText, component: () => <Blotter /> },
-        { id: '07', title: 'Audit Log', icon: Shield, component: () => <LiveTerminal wsEndpoint={`ws://${window.location.hostname}:8001/ws/redpanda`} title="Redpanda Stream (19092)" /> },
-        { id: '08', title: 'AI Analyst', icon: Brain, component: () => <AnalystController /> },
-        { id: '09', title: 'RAG Doc', icon: FileText, component: () => <RagController /> },
-        { id: '10', title: 'Fund Manager', icon: Activity, component: () => <FundController /> },
-        { id: '11', title: 'Cloud Scaling', icon: Server, component: () => <div className="p-10 text-center text-slate-400">HPA Metrics Chart</div> },
-        { id: '12', title: 'Trader Desktop', icon: Layout, component: () => <TraderDesktop /> },
+        { id: '01', title: 'CI/CD Pipeline', icon: Server, component: CiCdController },
+        { id: '02', title: 'The Container', icon: Box, component: ContainerManager },
+        { id: '03', title: 'The Cockpit', icon: Activity, component: ObservabilityDashboard },
+        { id: '04', title: 'The Tape Reader', icon: Disc, component: MarketDataBlotter },
+        { id: '05', title: 'The Algo Trader', icon: Zap, component: AlgoController },
+        // { id: '06', title: 'The Glass', icon: Monitor, component: Blotter },
+        { id: '07', title: 'The Audit Log', icon: Shield, component: KafkaStream },
+        { id: '08', title: 'The Brain', icon: Brain, component: AnalystController },
+        { id: '09', title: 'The Analyst', icon: Sparkles, component: RagController },
+        { id: '10', title: 'The Fund Manager', icon: Building2, component: FundController },
+        { id: '11', title: 'The Cloud Native', icon: Cloud, component: CloudDashboard },
+        { id: '12', title: 'Trader Desktop', icon: Layout, component: TraderDesktop },
+        { id: '13', title: 'The Green Hornet', icon: Rocket, component: GreenHornet },
+        { id: '14', title: 'The Brown Bear', icon: Bug, component: LegacyLab },
     ];
 
     const CurrentLab = labs.find(l => l.id === activeLab);
 
-    if (activeLab === 'HOME') {
-        return (
-            <Suspense fallback={<div className="bg-black h-screen text-white flex items-center justify-center">Loading Market Data...</div>}>
-                <HomeSplash onStart={() => setActiveLab('01')} />
-            </Suspense>
-        );
-    }
-
-
-
     return (
-        <div className="flex h-screen bg-[#0f172a] text-[#f8fafc] font-sans overflow-hidden">
+        <div className="flex h-screen w-screen bg-[#0f172a] text-[#f8fafc] font-sans overflow-hidden">
+
+            {/* Tour Controller */}
+            <TourController
+                startTriggerRef={startTourRef}
+                setActiveLab={setActiveLab}
+                setViewMode={setViewMode}
+            />
+
             {/* SIDEBAR */}
-            <div className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-[#1e293b]/50 border-r border-[#334155] flex flex-col transition-all duration-300 ease-in-out shrink-0`}>
-                <div className="p-6 border-b border-[#334155] cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-between" onClick={() => setActiveLab('HOME')}>
+            <div id="sidebar-nav" className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-[#1e293b] border-r border-[#334155] flex flex-col transition-all duration-300 ease-in-out flex-none relative z-10`}>
+                {/* ... (Header) */}
+                <div className="p-6 border-b border-[#334155] cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-between" onClick={() => { setActiveLab('HOME'); setViewMode('GUIDED'); }}>
                     {isSidebarOpen ? (
                         <div>
                             <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 whitespace-nowrap">
@@ -165,7 +181,6 @@ function App() {
                             key={lab.id}
                             onClick={() => {
                                 setActiveLab(lab.id);
-                                // If we click a lab while in HOME, default to GUIDED
                                 if (activeLab === 'HOME') setViewMode('GUIDED');
                             }}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all relative group ${activeLab === lab.id
@@ -178,7 +193,6 @@ function App() {
 
                             {isSidebarOpen && <span className="whitespace-nowrap overflow-hidden">{lab.title}</span>}
 
-                            {/* Tooltip for collapsed mode */}
                             {!isSidebarOpen && (
                                 <div className="absolute left-16 bg-slate-900 text-white text-xs px-2 py-1 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap pointer-events-none">
                                     {lab.title}
@@ -188,11 +202,30 @@ function App() {
                     ))}
                 </div>
 
-                {/* Collapse Toggle at Bottom */}
-                <div className="p-4 border-t border-[#334155] flex justify-center">
+                {/* TOUR START BUTTON */}
+                <div className="p-4 border-t border-[#334155] flex flex-col gap-2">
+                    {isSidebarOpen ? (
+                        <button
+                            onClick={() => startTourRef.current()}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg transition-all"
+                        >
+                            <HelpCircle size={16} />
+                            Start Tour
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => startTourRef.current()}
+                            className="p-2 flex justify-center text-purple-400 hover:text-white transition-colors"
+                            title="Start Tour"
+                        >
+                            <HelpCircle size={20} />
+                        </button>
+                    )}
+
                     <button
+                        id="sidebar-toggle-btn"
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="p-2 rounded-lg hover:bg-white/5 text-slate-500 hover:text-white transition-colors"
+                        className="p-2 rounded-lg hover:bg-white/5 text-slate-500 hover:text-white transition-colors flex justify-center"
                     >
                         {isSidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
                     </button>
@@ -200,12 +233,20 @@ function App() {
             </div>
 
             {/* MAIN STAGE */}
-            <div className="flex-1 flex flex-col relative bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-cyan-900/20 via-[#0f172a] to-[#0f172a] overflow-hidden">
+            <div id="main-stage" className="flex-1 min-w-0 flex flex-col relative bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-cyan-900/20 via-[#0f172a] to-[#0f172a] overflow-hidden z-0">
 
                 {/* CONDITIONAL CONTENT: Guided Mode vs Standard Mode */}
-                {viewMode === 'GUIDED' && CurrentLab ? (
-                    <div className="flex-1 overflow-hidden flex flex-col">
-                        {/* UNIFIED LAB VIEW (Has its own toolbar) */}
+                {viewMode === 'GUIDED' && activeLab === 'HOME' ? (
+                    <div className="h-full w-full">
+                        <Suspense fallback={<div className="bg-black text-cyan-500 p-10">Initializing Nexus...</div>}>
+                            <HomePage
+                                onNavigate={(id) => setActiveLab(id as LabId)}
+                                onStartTour={() => startTourRef.current()}
+                            />
+                        </Suspense>
+                    </div>
+                ) : viewMode === 'GUIDED' && CurrentLab ? (
+                    <div id="unified-lab-view" className="flex-1 overflow-hidden flex flex-col">
                         <Suspense fallback={<div className="bg-black/50 h-full flex items-center justify-center text-cyan-500">Loading Guided Experience...</div>}>
                             <UnifiedLabView
                                 labId={activeLab}
@@ -224,7 +265,7 @@ function App() {
                             </h2>
 
                             {/* TABS */}
-                            <div className="flex bg-[#1e293b] p-1 rounded-lg border border-[#334155] gap-1">
+                            <div id="view-mode-tabs" className="flex bg-[#1e293b] p-1 rounded-lg border border-[#334155] gap-1">
                                 <button
                                     onClick={() => setViewMode('GUIDED')}
                                     className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${viewMode === 'GUIDED' ? 'bg-[#8b5cf6] text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white'}`}
@@ -263,7 +304,7 @@ function App() {
                     </>
                 )}
             </div>
-        </div >
+        </div>
     )
 }
 

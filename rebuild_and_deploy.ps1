@@ -30,31 +30,43 @@ if (-not $netCheck) {
 }
 
 # Define services with UI paths
+# Define services in the requested start order: MD -> ECN -> EXCH -> MM -> DEMO
 $services = @(
-    @{ Name = "EXCH"; File = "exchange/docker-compose.prod.yml"; Color = "Green"; UiPath = "exchange/ui" },
     @{ Name = "MD"; File = "marketdata/docker-compose.prod.yml"; Color = "Magenta"; UiPath = "marketdata/ui" },
-    @{ Name = "MM"; File = "marketmaker/docker-compose.prod.yml"; Color = "Yellow"; UiPath = "marketmaker/frontend" },
     @{ Name = "ECN"; File = "ecngateway/docker-compose.prod.yml"; Color = "Cyan"; UiPath = "ecngateway/ui" },
+    @{ Name = "EXCH"; File = "exchange/docker-compose.prod.yml"; Color = "Green"; UiPath = "exchange/ui" },
+    @{ Name = "MM"; File = "marketmaker/docker-compose.prod.yml"; Color = "Yellow"; UiPath = "marketmaker/frontend" },
     @{ Name = "DEMO"; File = "demo/student-demo/docker-compose.yml"; Color = "Blue"; UiPath = "demo/student-demo/ui" }
 )
 
-# 2. Build UIs Locally & Package Docker
+# 2. Start Infrastructure First
+Write-Host "[Infrastructure] Starting Redis, Redpanda, Monitor..." -ForegroundColor Cyan
+docker compose -f infrastructure/docker-compose.infra.yml up -d
+Write-Host "Waiting 5s for Infrastructure..." -ForegroundColor Gray
+Start-Sleep -Seconds 5
+
+# 3. Build & Deploy Application Services
 foreach ($service in $services) {
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    Write-Host "[$($service.Name)] Building UI Locally..." -ForegroundColor $service.Color
+    Write-Host "[$($service.Name)] Processing..." -ForegroundColor $service.Color
     
     try {
-        # Local Build
-        Set-Location "$rootPath/$($service.UiPath)"
-        cmd /c "npm install"
-        if ($LASTEXITCODE -ne 0) { throw "npm install failed" }
-        
-        cmd /c "npm run build"
-        if ($LASTEXITCODE -ne 0) { throw "npm run build failed" }
+        # Local Build - Skip for DEMO (relies on Docker context)
+        if ($service.Name -ne "DEMO") {
+            if (Test-Path "$rootPath/$($service.UiPath)") {
+                Write-Host "[$($service.Name)] Building UI Locally..." -ForegroundColor Gray
+                Set-Location "$rootPath/$($service.UiPath)"
+                cmd /c "npm install"
+                if ($LASTEXITCODE -ne 0) { throw "npm install failed" }
+                
+                cmd /c "npm run build"
+                if ($LASTEXITCODE -ne 0) { throw "npm run build failed" }
+            }
+        } 
         
         # Docker Package
         Set-Location $rootPath
-        Write-Host "[$($service.Name)] Packaging Docker Image..." -ForegroundColor $service.Color
+        Write-Host "[$($service.Name)] Building Docker Image..." -ForegroundColor Gray
         $buildCmd = "docker compose -f $($service.File) build"
         Invoke-Expression "$buildCmd 2>&1" | ForEach-Object { Write-Host "[$($service.Name)] $_" -ForegroundColor $service.Color }
         if ($LASTEXITCODE -ne 0) { throw "Docker build failed" }
@@ -75,41 +87,12 @@ foreach ($service in $services) {
     }
 }
 
-# 3. Restart Gateway (Infrastructure)
+# 4. Final Gateway Restart (to pick up all upstreams)
 Write-Host "[Infrastructure] Restarting Portal Gateway..." -ForegroundColor Cyan
 Invoke-Expression "docker compose -f infrastructure/docker-compose.infra.yml up -d --force-recreate nginx-portal"
-Write-Host "Deployment Complete! Access at http://localhost/" -ForegroundColor Green
-
-Write-Host "All Builds Successful!" -ForegroundColor Green
-
-# 2. Start Infrastructure
-Write-Host "[2/6] Starting Infrastructure..."
-docker compose -f infrastructure/docker-compose.infra.yml up -d
-
-Write-Host "Waiting 5s for Infrastructure..."
-Start-Sleep -Seconds 5
-
-# 3. Start ECN Gateway
-Write-Host "[3/6] Starting ECN Gateway..."
-docker compose -f ecngateway/docker-compose.prod.yml up -d
-
-# 4. Start Exchange
-Write-Host "[4/6] Starting Exchange..."
-docker compose -f exchange/docker-compose.prod.yml up -d
-
-# 5. Start Market Data
-Write-Host "[5/6] Starting Market Data..."
-docker compose -f marketdata/docker-compose.prod.yml up -d
-
-# 6. Start Market Maker
-Write-Host "[6/6] Starting Market Maker..."
-docker compose -f marketmaker/docker-compose.prod.yml up -d
-
-# 7. Start Student Demo
-Write-Host "[7/7] Starting Student Demo..."
-docker compose -f demo/student-demo/docker-compose.yml up -d
 
 Write-Host "-------------------------------------------" -ForegroundColor Green
-Write-Host "Full Stack Deployed with Proxy Routing!" -ForegroundColor Green
-Write-Host "Access everything at: http://localhost"
+Write-Host "Full Stack Deployed!" -ForegroundColor Green
+Write-Host "Service Order: Infra -> MarketData -> ECN -> Exchange -> MM -> Demo"
+Write-Host "Access at: http://localhost"
 Write-Host "-------------------------------------------"

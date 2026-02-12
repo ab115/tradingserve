@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: fintech_prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - fintech_net
+    restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: fintech_grafana
+    ports:
+      - "3030:3000" # Mapped to 3030 to avoid 3000 conflict
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    networks:
+      - fintech_net
+    restart: always
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: fintech_cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - fintech_net
+    restart: always
+    privileged: true
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: fintech_node_exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - fintech_net
+    restart: always
+
+networks:
+  fintech_net:
+    external: true
+    name: tradingserver_backbone_net

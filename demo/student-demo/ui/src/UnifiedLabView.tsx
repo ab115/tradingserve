@@ -48,6 +48,7 @@ export default function UnifiedLabView({ labId, LabComponent, onClose }: Unified
                 <div className="flex items-center gap-2">
                     {/* Toggle Manual Button */}
                     <button
+                        id="toggle-manual-btn"
                         onClick={() => setManualState(manualState === 'CLOSED' ? 'OPEN' : 'CLOSED')}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded transition-colors text-xs font-bold border ${manualState === 'OPEN'
                             ? 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20'
@@ -63,6 +64,7 @@ export default function UnifiedLabView({ labId, LabComponent, onClose }: Unified
 
                     {/* Toggle Workspace Button */}
                     <button
+                        id="toggle-workspace-btn"
                         onClick={() => setWorkspaceState(workspaceState === 'CLOSED' ? 'OPEN' : 'CLOSED')}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded transition-colors text-xs font-bold border ${workspaceState === 'OPEN'
                             ? 'bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20'
@@ -91,7 +93,7 @@ export default function UnifiedLabView({ labId, LabComponent, onClose }: Unified
 
                 {/* LEFT PANEL: Manual (Markdown) */}
                 {isManualOpen && (
-                    <div className={`flex flex-col bg-[#0f172a] transition-all duration-300 border-r border-slate-800 
+                    <div className={`flex flex-col bg-[#0f172a] transition-all duration-300 border-r border-slate-800 flex-none min-w-0
                         ${isWorkspaceOpen ? 'w-[45%]' : 'w-full'}
                     `}>
                         <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between text-xs font-mono text-cyan-400 uppercase shrink-0">
@@ -103,6 +105,7 @@ export default function UnifiedLabView({ labId, LabComponent, onClose }: Unified
                         </div>
                         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                             <div className="prose prose-invert prose-slate max-w-4xl mx-auto">
+                                {/* ... content ... */}
 
                                 {/* VIDEO PLAYER */}
                                 {content.videoUrl && (
@@ -162,7 +165,7 @@ export default function UnifiedLabView({ labId, LabComponent, onClose }: Unified
 
                 {/* RIGHT PANEL: Demo (Interactive) */}
                 {isWorkspaceOpen && (
-                    <div className="flex-1 flex flex-col bg-[#0b1221] animate-in slide-in-from-right duration-300 border-l border-slate-800">
+                    <div className="flex-1 min-w-0 flex flex-col bg-[#0b1221] animate-in slide-in-from-right duration-300 border-l border-slate-800">
                         <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between text-xs font-mono text-purple-400 uppercase shrink-0">
                             <div className="flex items-center gap-2">
                                 <MonitorPlay size={14} />

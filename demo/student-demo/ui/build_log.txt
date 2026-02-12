@@ -1,0 +1,26 @@
+
+> student-demo-ui@0.0.0 build
+> vite build
+
+[36mvite v4.5.14 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 43 modules transformed.
+[32m✓ built in 5.02s[39m
+[31m[vite]: Rollup failed to resolve import "lucide-react" from "D:/scalegrad/tradingserver/demo/labs/06_glass/Blotter.tsx".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`[39m
+[31merror during build:
+Error: [vite]: Rollup failed to resolve import "lucide-react" from "D:/scalegrad/tradingserver/demo/labs/06_glass/Blotter.tsx".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`
+    at viteWarn (file:///D:/scalegrad/tradingserver/demo/student-demo/ui/node_modules/vite/dist/node/chunks/dep-827b23df.js:48272:27)
+    at onwarn (file:///D:/scalegrad/tradingserver/demo/student-demo/ui/node_modules/@vitejs/plugin-react/dist/index.js:90:7)
+    at onRollupWarning (file:///D:/scalegrad/tradingserver/demo/student-demo/ui/node_modules/vite/dist/node/chunks/dep-827b23df.js:48301:9)
+    at onwarn (file:///D:/scalegrad/tradingserver/demo/student-demo/ui/node_modules/vite/dist/node/chunks/dep-827b23df.js:48032:13)
+    at file:///D:/scalegrad/tradingserver/demo/student-demo/ui/node_modules/rollup/dist/es/shared/node-entry.js:24276:13
+    at Object.logger [as onLog] (file:///D:/scalegrad/tradingserver/demo/student-demo/ui/node_modules/rollup/dist/es/shared/node-entry.js:25950:9)
+    at ModuleLoader.handleInvalidResolvedId (file:///D:/scalegrad/tradingserver/demo/student-demo/ui/node_modules/rollup/dist/es/shared/node-entry.js:24862:26)
+    at file:///D:/scalegrad/tradingserver/demo/student-demo/ui/node_modules/rollup/dist/es/shared/node-entry.js:24822:26
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)[39m

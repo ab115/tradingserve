@@ -8,3 +8,4 @@ pytest
 httpx
 lxml
 html5lib
+prometheus-fastapi-instrumentator

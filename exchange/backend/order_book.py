@@ -134,7 +134,28 @@ class OrderBook:
             elif order.type == '1': # Market Order
                 pass
                 
-        return trades, cancelled
+    def cancel_order(self, order_id: str) -> Optional[Order]:
+        """
+        Removes an order by ID from the book.
+        Returns the Order if found, else None.
+        """
+        # 1. Search Bids
+        for i, item in enumerate(self.bids):
+            # item is (-price, timestamp, order)
+            if item[2].id == order_id or item[2].cl_ord_id == order_id:
+                neg_price, ts, order = self.bids.pop(i)
+                heapq.heapify(self.bids)
+                return order
+        
+        # 2. Search Asks
+        for i, item in enumerate(self.asks):
+            # item is (price, timestamp, order)
+            if item[2].id == order_id or item[2].cl_ord_id == order_id:
+                price, ts, order = self.asks.pop(i)
+                heapq.heapify(self.asks)
+                return order
+                
+        return None
 
     def to_dict(self) -> dict:
         """

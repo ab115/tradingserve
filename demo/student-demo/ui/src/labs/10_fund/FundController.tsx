@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { User, Shield, Briefcase, ArrowRight, Play, Square, CheckCircle, Smartphone } from 'lucide-react';
+import { User, Shield, Briefcase, Play, Square, CheckCircle, Smartphone } from 'lucide-react';
 
 interface AgentState {
     name: string;
@@ -13,6 +13,8 @@ interface AgentState {
 export default function FundController() {
     const [isRunning, setIsRunning] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
+    const [showLogs, setShowLogs] = useState(false);
+
 
     // Agent States
     const [agents, setAgents] = useState<AgentState[]>([
@@ -22,6 +24,7 @@ export default function FundController() {
     ]);
 
     const latestLogRef = useRef<HTMLDivElement>(null);
+    const bufferRef = useRef<string[]>([]);
 
     useEffect(() => {
         const host = window.location.hostname;
@@ -29,36 +32,52 @@ export default function FundController() {
 
         ws.onmessage = (e) => {
             const line = e.data;
-            setLogs(prev => [...prev, line]);
-
-            // Simple State Machine Parser
-            setAgents(prev => {
-                const next = [...prev];
-
-                // 1. Analyst
-                if (line.includes("[Analyst Agent]")) next[0].status = 'WORKING';
-                if (line.includes("Sentiment Analysis:")) {
-                    next[0].status = 'DONE';
-                    next[0].result = line.split("Sentiment Analysis:")[1].trim();
-                }
-
-                // 2. Risk
-                if (line.includes("[Risk Agent]")) next[1].status = 'WORKING';
-                if (line.includes("Risk Assessment:")) {
-                    next[1].status = 'DONE';
-                    next[1].result = line.split("Risk Assessment:")[1].trim();
-                }
-
-                // 3. PM
-                if (line.includes("[Portfolio Agent]")) next[2].status = 'WORKING';
-                if (line.includes("FINAL DECISION:")) {
-                    next[2].status = 'DONE';
-                    next[2].result = line.split("FINAL DECISION:")[1].trim();
-                }
-
-                return next;
-            });
+            if (!line.includes("[Lab 10]")) return;
+            bufferRef.current.unshift(line);
         };
+
+        // Flush Buffer (Throttle to 10fps)
+        const flushInterval = setInterval(() => {
+            if (bufferRef.current.length > 0) {
+                const newLines = [...bufferRef.current];
+                // Update Logs
+                setLogs(prev => [...newLines, ...prev].slice(0, 100));
+
+                // Update Agents based on new lines
+                setAgents(prev => {
+                    const next = [...prev];
+
+                    // Process logs chronologically (Oldest -> Newest)
+                    // bufferRef is [Newest, ..., Oldest] (due to unshift). So we reverse it.
+                    [...newLines].reverse().forEach(line => {
+                        // 1. Analyst
+                        if (line.includes("[Analyst Agent]")) next[0].status = 'WORKING';
+                        if (line.includes("Sentiment Analysis:")) {
+                            next[0].status = 'DONE';
+                            next[0].result = line.split("Sentiment Analysis:")[1].trim();
+                        }
+
+                        // 2. Risk
+                        if (line.includes("[Risk Agent]")) next[1].status = 'WORKING';
+                        if (line.includes("Risk Assessment:")) {
+                            next[1].status = 'DONE';
+                            next[1].result = line.split("Risk Assessment:")[1].trim();
+                        }
+
+                        // 3. PM
+                        if (line.includes("[Portfolio Agent]")) next[2].status = 'WORKING';
+                        if (line.includes("FINAL DECISION:")) {
+                            next[2].status = 'DONE';
+                            next[2].result = line.split("FINAL DECISION:")[1].trim();
+                        }
+                    });
+                    return next;
+                });
+
+
+                bufferRef.current = [];
+            }
+        }, 100);
 
         // Polling status
         const checkStatus = () => {
@@ -68,20 +87,23 @@ export default function FundController() {
         };
 
         checkStatus();
-        const interval = setInterval(checkStatus, 1000);
+        const pollInterval = setInterval(checkStatus, 1000);
 
         return () => {
             ws.close();
-            clearInterval(interval);
+            clearInterval(flushInterval);
+            clearInterval(pollInterval);
         };
     }, []);
 
     const toggle = async () => {
         const host = window.location.hostname;
-        const endpoint = isRunning ? 'stop' : 'start';
+        const newState = !isRunning;
+        const endpoint = newState ? 'start' : 'stop';
 
-        // Reset state on start
-        if (!isRunning) {
+        // Optimistic
+        setIsRunning(newState);
+        if (newState) {
             setAgents(prev => prev.map(a => ({ ...a, status: 'IDLE', result: undefined })));
             setLogs([]);
         }
@@ -89,75 +111,84 @@ export default function FundController() {
         try {
             const res = await fetch(`http://${host}:8001/labs/10/${endpoint}`, { method: 'POST' });
             const data = await res.json();
-
-            if (data.status === 'ok') {
-                setIsRunning(!isRunning);
-            }
+            if (data.status !== 'ok') setIsRunning(!newState); // Revert
         } catch (error) {
             console.error("Failed to toggle fund manager:", error);
+            setIsRunning(!newState); // Revert
         }
     };
 
+
+
     return (
-        <div className="flex flex-col h-full bg-[#0a0f1c] text-slate-300 font-sans shadow-2xl rounded-xl overflow-hidden border border-slate-800">
+        <div className="flex flex-col h-full bg-[#0a0f1c] text-slate-300 font-sans shadow-lg rounded-lg overflow-hidden border border-slate-800">
             {/* Header */}
-            <div className="p-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="bg-indigo-500/10 p-3 rounded-lg text-indigo-400">
-                        <Smartphone size={24} />
+            <div className="p-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="bg-indigo-500/10 p-2 rounded-md text-indigo-400">
+                        <Smartphone size={18} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">Fund Manager AI</h1>
-                        <p className="text-sm text-slate-500">Lab 10: Multi-Agent Workflow</p>
+                        <h1 className="text-base font-bold text-white tracking-tight leading-none">Fund AI</h1>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Lab 10: Multi-Agent</p>
                     </div>
                 </div>
 
-                <button
-                    onClick={toggle}
-                    className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition-all ${isRunning
-                        ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/50'
-                        : 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/50'}`}
-                >
-                    {isRunning ? <><Square size={16} fill="currentColor" /> STOP AGENTS</> : <><Play size={16} fill="currentColor" /> DEPLOY POD</>}
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowLogs(!showLogs)}
+                        className={`p-1.5 rounded hover:bg-slate-800 transition-colors ${showLogs ? 'text-indigo-400' : 'text-slate-500'}`}
+                        title="Toggle Agent Logs"
+                    >
+                        <Square size={14} className={showLogs ? "fill-current" : ""} />
+                    </button>
+                    <button
+                        onClick={toggle}
+                        className={`btn-glass px-4 py-1.5 text-xs ${isRunning
+                            ? 'btn-glass-danger'
+                            : 'btn-glass-primary'}`}
+                    >
+                        {isRunning ? <><Square size={12} fill="currentColor" /> STOP</> : <><Play size={12} fill="currentColor" /> DEPLOY</>}
+                    </button>
+                </div>
             </div>
 
-            <div className="flex flex-1 overflow-hidden">
-                {/* Agent Graph View */}
-                <div className="flex-1 p-12 bg-gradient-to-br from-[#0a0f1c] to-[#0f1629] flex items-center justify-center relative">
+            <div className="flex flex-1 overflow-hidden relative">
+                {/* Agent Graph View - Responsive */}
+                <div className="flex-1 p-4 bg-gradient-to-br from-[#0a0f1c] to-[#0f1629] flex items-center justify-center relative overflow-hidden">
 
-                    {/* Connecting Lines */}
-                    <div className="absolute top-1/2 left-20 right-20 h-1 bg-slate-800 -z-10 transform -translate-y-1/2"></div>
+                    {/* Connecting Lines (Scaled) */}
+                    <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-slate-800 -z-10 transform -translate-y-1/2"></div>
 
-                    {/* Nodes */}
-                    <div className="flex justify-between w-full max-w-4xl z-10">
+                    {/* Nodes - Flexible Container */}
+                    <div className="flex justify-between w-full max-w-4xl px-4 z-10 gap-2">
                         {agents.map((agent, i) => {
                             const isActive = agent.status !== 'IDLE';
                             const isDone = agent.status === 'DONE';
 
                             return (
-                                <div key={i} className={`flex flex-col items-center gap-4 transition-all duration-500 ${isActive ? 'opacity-100 scale-105' : 'opacity-40 scale-100'}`}>
+                                <div key={i} className={`flex flex-col items-center gap-2 transition-all duration-500 ${isActive ? 'opacity-100 scale-105' : 'opacity-60 scale-95'} flex-1 min-w-0`}>
                                     {/* Circle */}
-                                    <div className={`w-24 h-24 rounded-full border-4 flex items-center justify-center bg-[#0a0f1c] shadow-2xl relative
+                                    <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full border-2 flex items-center justify-center bg-[#0a0f1c] shadow-xl relative shrink-0
                                         ${isDone ? `border-${agent.color.split('-')[1]}-500 shadow-${agent.color.split('-')[1]}-500/50` : isActive ? 'border-white animate-pulse' : 'border-slate-700'}`}>
 
-                                        <agent.icon size={32} className={isActive ? agent.color : 'text-slate-600'} />
+                                        <agent.icon size={20} className={isActive ? agent.color : 'text-slate-600'} />
 
-                                        {isDone && <div className="absolute -top-2 -right-2 bg-green-500 text-black rounded-full p-1"><CheckCircle size={16} /></div>}
+                                        {isDone && <div className="absolute -top-1 -right-1 bg-green-500 text-black rounded-full p-0.5"><CheckCircle size={10} /></div>}
                                     </div>
 
                                     {/* Labels */}
-                                    <div className="text-center">
-                                        <h3 className={`font-bold text-lg ${isActive ? 'text-white' : 'text-slate-600'}`}>{agent.name}</h3>
-                                        <p className="text-xs uppercase tracking-wider text-slate-500">{agent.role}</p>
+                                    <div className="text-center w-full">
+                                        <h3 className={`font-bold text-[10px] md:text-xs truncate px-1 ${isActive ? 'text-white' : 'text-slate-600'}`}>{agent.name}</h3>
+                                        <p className="text-[8px] md:text-[9px] uppercase tracking-wider text-slate-500 truncate">{agent.role}</p>
                                     </div>
 
                                     {/* Result Bubble */}
-                                    <div className={`mt-2 px-4 py-2 rounded-lg border font-mono font-bold transition-all duration-500 transform
-                                        ${isDone ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}
+                                    <div className={`mt-1 px-2 py-1 rounded border font-mono font-bold text-[9px] transition-all duration-500 transform w-full text-center truncate
+                                        ${isDone ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'}
                                         ${agent.result?.includes("BUY") || agent.result === "BULLISH" || agent.result === "LOW" ? 'bg-green-500/20 border-green-500 text-green-400' :
                                             agent.result === "HOLD" ? 'bg-yellow-500/20 border-yellow-500 text-yellow-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
-                                        {agent.result}
+                                        {agent.result?.substring(0, 20) || "Processing..."}
                                     </div>
                                 </div>
                             );
@@ -165,16 +196,21 @@ export default function FundController() {
                     </div>
                 </div>
 
-                {/* Raw Logs Sidebar */}
-                <div className="w-80 bg-black border-l border-slate-800 p-4 font-mono text-xs overflow-y-auto hidden lg:block">
-                    <div className="text-slate-500 mb-2 font-bold uppercase tracking-wider">Agent Logs</div>
-                    {logs.map((log, i) => (
-                        <div key={i} className="mb-1 text-slate-400 break-words opacity-70 border-b border-slate-900/50 pb-1">
-                            {log.includes("[") ? <span className="text-indigo-400 font-bold">{log}</span> : log}
+                {/* Raw Logs Sidebar - Toggleable Overlay */}
+                {showLogs && (
+                    <div className="absolute top-0 right-0 h-full w-48 bg-black/95 backdrop-blur-sm border-l border-slate-800 p-2 font-mono text-[10px] overflow-y-auto animate-in slide-in-from-right duration-200 z-10 shadow-2xl">
+                        <div className="text-slate-500 mb-1 font-bold uppercase tracking-wider text-[9px] flex justify-between items-center sticky top-0 bg-black/95 pb-1 border-b border-slate-800/50">
+                            <span>Agent Logs</span>
+                            <button onClick={() => setShowLogs(false)} className="hover:text-white"><Square size={10} /></button>
                         </div>
-                    ))}
-                    <div ref={latestLogRef}></div>
-                </div>
+                        {logs.map((log, i) => (
+                            <div key={i} className="mb-0.5 text-slate-400 break-words opacity-70 border-b border-slate-900/50 pb-0.5 leading-tight pl-1">
+                                {log.includes("[") ? <span className="text-indigo-400 font-bold">{log}</span> : log}
+                            </div>
+                        ))}
+                        <div ref={latestLogRef}></div>
+                    </div>
+                )}
             </div>
         </div>
     );

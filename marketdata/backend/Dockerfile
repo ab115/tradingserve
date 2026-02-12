@@ -45,6 +45,7 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 COPY marketdata/backend .
+COPY marketdata/resources /app/resources
 RUN mkdir -p log
 EXPOSE 9001
 CMD ["python", "main.py"]

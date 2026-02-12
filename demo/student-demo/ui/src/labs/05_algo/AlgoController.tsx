@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Square, Terminal } from 'lucide-react';
 
 export default function AlgoController() {
@@ -6,16 +6,30 @@ export default function AlgoController() {
     const [logs, setLogs] = useState<string[]>([]);
     const [status, setStatus] = useState("Connected");
 
+    const bufferRef = useRef<string[]>([]);
+
     useEffect(() => {
         // Connect to Log WebSocket
         const host = window.location.hostname;
         const ws = new WebSocket(`ws://${host}:8001/ws/logs`);
 
-        ws.onopen = () => setLogs(p => [...p, "System: Connected to Log Stream..."]);
+        ws.onopen = () => { bufferRef.current.unshift("System: Connected to Log Stream..."); };
         ws.onmessage = (e) => {
-            setLogs(prev => [e.data, ...prev].slice(0, 100)); // Keep last 100 lines
+            if (!e.data.includes("[Lab 05]")) return;
+            bufferRef.current.unshift(e.data);
         };
         ws.onclose = () => setStatus("Disconnected");
+
+        // Flush Buffer Interval (Throttle updates to 10fps)
+        const flushInterval = setInterval(() => {
+            if (bufferRef.current.length > 0) {
+                setLogs(prev => {
+                    const newLogs = [...bufferRef.current, ...prev].slice(0, 100);
+                    bufferRef.current = [];
+                    return newLogs;
+                });
+            }
+        }, 100);
 
         // Fetch initial status
         fetch(`http://${host}:8001/labs/05/status`)
@@ -23,69 +37,77 @@ export default function AlgoController() {
             .then(data => {
                 if (data.running) {
                     setIsRunning(true);
-                    setLogs(p => ["System: Bot is already running...", ...p]);
+                    bufferRef.current.unshift("System: Bot is already running...");
                 }
             })
             .catch(err => console.error("Failed to fetch process status", err));
 
-        return () => ws.close();
+        return () => {
+            ws.close();
+            clearInterval(flushInterval);
+        };
     }, []);
 
     const toggleBot = async () => {
         const host = window.location.hostname;
-        const endpoint = isRunning ? 'stop' : 'start';
+        const newState = !isRunning;
+        const endpoint = newState ? 'start' : 'stop'; // Corrected logic
+
+        // Optimistic Update
+        setIsRunning(newState);
+        bufferRef.current.unshift(newState ? "System: Starting Bot..." : "System: Stopping Bot...");
 
         try {
             const res = await fetch(`http://${host}:8001/labs/05/${endpoint}`, { method: 'POST' });
             const data = await res.json();
-            if (data.status === 'ok') {
-                setIsRunning(!isRunning);
-                setLogs(p => [!isRunning ? "System: Starting Bot..." : "System: Stopping Bot...", ...p]);
-            } else {
-                setLogs(p => [`System Error: ${data.message}`, ...p]);
+            if (data.status !== 'ok') {
+                // Revert on error
+                setIsRunning(!newState);
+                bufferRef.current.unshift(`System Error: ${data.message}`);
             }
         } catch (e) {
             console.error(e);
-            setLogs(p => [`Connection Error`, ...p]);
+            setIsRunning(!newState);
+            bufferRef.current.unshift(`Connection Error`);
         }
     };
 
     return (
-        <div className="flex flex-col h-full gap-4">
+        <div className="flex flex-col h-full gap-2">
             {/* Visual Controls */}
-            <div className="flex items-center justify-between p-6 bg-slate-900 border border-slate-700 rounded-xl shadow-lg">
+            <div className="flex items-center justify-between p-3 bg-slate-900 border border-slate-700 rounded-lg shadow-sm">
                 <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Algo Trader Bot</h2>
-                    <p className="text-slate-400">Lab 05: Automated Strategy Execution</p>
+                    <h2 className="text-base font-bold text-white leading-none">Algo Bot</h2>
+                    <p className="text-[10px] text-slate-500 mt-1">Lab 05: Strategy Exec</p>
                 </div>
 
                 <button
                     onClick={toggleBot}
-                    className={`flex items-center gap-3 px-8 py-4 rounded-lg font-bold text-lg transition-all ${isRunning
-                        ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30 border border-red-500/50'
-                        : 'bg-green-500/20 text-green-500 hover:bg-green-500/30 border border-green-500/50'
+                    className={`btn-glass px-4 py-2 text-xs ${isRunning
+                        ? 'btn-glass-danger'
+                        : 'btn-glass-primary'
                         }`}
                 >
-                    {isRunning ? <><Square fill="currentColor" /> STOP TRADING</> : <><Play fill="currentColor" /> START TRADING</>}
+                    {isRunning ? <><Square fill="currentColor" size={12} /> STOP</> : <><Play fill="currentColor" size={12} /> START</>}
                 </button>
             </div>
 
             {/* Terminal Output */}
-            <div className="flex-1 flex flex-col bg-black rounded-xl border border-slate-800 overflow-hidden shadow-inner">
-                <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center gap-2 text-slate-400 text-sm">
-                    <Terminal size={14} />
-                    <span>Output Console</span>
-                    <span className="ml-auto w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            <div className="flex-1 flex flex-col bg-black rounded-lg border border-slate-800 overflow-hidden shadow-inner">
+                <div className="px-3 py-1 bg-slate-900 border-b border-slate-800 flex items-center gap-2 text-slate-400 text-xs">
+                    <Terminal size={12} />
+                    <span>Console</span>
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                 </div>
-                <div className="flex-1 p-4 font-mono text-sm overflow-y-auto custom-scrollbar">
-                    {logs.length === 0 && <div className="text-slate-600 italic">Ready to run...</div>}
+                <div className="flex-1 p-2 font-mono text-[10px] leading-tight overflow-y-auto custom-scrollbar">
+                    {logs.length === 0 && <div className="text-slate-600 italic">Ready...</div>}
                     {logs.map((log, i) => (
-                        <div key={i} className={`mb-1 break-all ${log.includes("ERROR") ? "text-red-400" :
+                        <div key={i} className={`mb-0.5 break-all ${log.includes("ERROR") ? "text-red-400" :
                             log.includes("BUY") ? "text-blue-400 font-bold" :
                                 log.includes("SELL") ? "text-orange-400 font-bold" :
                                     "text-slate-300"
                             }`}>
-                            <span className="opacity-50 mr-2">[{new Date().toLocaleTimeString()}]</span>
+                            <span className="opacity-30 mr-2">[{new Date().toLocaleTimeString()}]</span>
                             {log}
                         </div>
                     ))}

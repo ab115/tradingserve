@@ -7,3 +7,4 @@ uvicorn
 websockets
 python-dotenv
 redis>=4.2.0
+prometheus-fastapi-instrumentator

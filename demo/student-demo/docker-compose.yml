@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   demo-backend:
@@ -13,6 +13,7 @@ services:
       - TRADING_SERVER_PORT=8000
     volumes:
       - ../labs:/app/labs # Mount the labs from parent directory
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8001:8001"
     networks:

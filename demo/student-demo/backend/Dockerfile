@@ -1,9 +1,10 @@
 FROM python:3.9-slim
 
 WORKDIR /app
+ENV PYTHONUNBUFFERED=1
 
 # Install dependencies
-RUN pip install fastapi "uvicorn[standard]" redis confluent-kafka requests
+RUN pip install fastapi "uvicorn[standard]" redis confluent-kafka requests docker
 
 # Copy backend code
 COPY . .
