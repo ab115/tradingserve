@@ -74,7 +74,7 @@ install_docker() {
 
     info "Installing Docker Engine and Docker Compose..."
     apt-get update
-    apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin redis-tools
 
     info "Docker installed successfully."
 }
@@ -529,6 +529,21 @@ services:
       - "8082:8081"
     environment:
       - REDIS_HOSTS=local:redis:6379
+      # Node.js Performance Tuning
+      - NODE_ENV=production
+      - UV_THREADPOOL_SIZE=128
+      - NODE_OPTIONS=--max-old-space-size=384
+      # HTTP Server Tuning
+      - HTTP_MAX_SOCKETS=1000
+      - HTTP_KEEP_ALIVE_TIMEOUT=65000
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
     restart: unless-stopped
     depends_on:
       - redis
@@ -644,6 +659,17 @@ verify_installation() {
         echo "  - Redpanda UI:       http://<host-ip>:8083"
     else
         warn "Some services did not start correctly. Check logs with: docker compose logs <service_name>"
+    fi
+
+    info "Testing non-root Redis access..."
+    if command -v redis-cli &> /dev/null; then
+        if redis-cli -h localhost ping | grep -q "PONG"; then
+            echo -e "  redis-cli: \033[1;32mACCESSIBLE & CONNECTED\033[0m"
+        else
+            echo -e "  redis-cli: \033[1;33mINSTALLED BUT CONNOT CONNECT (Check Firewall/Port 6379)\033[0m"
+        fi
+    else
+        echo -e "  redis-cli: \033[1;31mMISSING (Install redis-tools)\033[0m"
     fi
 }
 

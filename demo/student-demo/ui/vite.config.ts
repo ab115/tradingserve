@@ -11,6 +11,7 @@ export default defineConfig({
     base: '/demo/',
     plugins: [react()],
     resolve: {
+        preserveSymlinks: true,
         alias: {
             '@labs': process.env.DOCKER_BUILD
                 ? path.resolve(__dirname, './src/labs_mirror')

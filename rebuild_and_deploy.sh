@@ -66,17 +66,20 @@ deploy_service() {
 }
 
 # 2. Build and Deploy Services
+# Market Data
+deploy_service "MD" "marketdata/docker-compose.prod.yml" "marketdata/ui" "$MAGENTA"
+
+# ECN Gateway
+deploy_service "ECN" "ecngateway/docker-compose.prod.yml" "ecngateway/ui" "$CYAN"
+
+
 # Exchange
 deploy_service "EXCH" "exchange/docker-compose.prod.yml" "exchange/ui" "$GREEN"
 
-# Market Data
-deploy_service "MD" "marketdata/docker-compose.prod.yml" "marketdata/ui" "$MAGENTA"
 
 # Market Maker
 deploy_service "MM" "marketmaker/docker-compose.prod.yml" "marketmaker/frontend" "$YELLOW"
 
-# ECN Gateway
-deploy_service "ECN" "ecngateway/docker-compose.prod.yml" "ecngateway/ui" "$CYAN"
 
 # Student Demo
 deploy_service "DEMO" "demo/student-demo/docker-compose.yml" "demo/student-demo/ui" "$CYAN"
@@ -96,14 +99,16 @@ echo "Waiting 5s for Infrastructure..."
 sleep 5
 
 # 5. Start remaining services (Redundant check)
+echo -e "${CYAN}[5/6] Starting Market Data...${NC}"
+docker compose -f marketdata/docker-compose.prod.yml up -d
+
+
 echo -e "${CYAN}[3/6] Starting ECN Gateway...${NC}"
 docker compose -f ecngateway/docker-compose.prod.yml up -d
 
 echo -e "${CYAN}[4/6] Starting Exchange...${NC}"
 docker compose -f exchange/docker-compose.prod.yml up -d
 
-echo -e "${CYAN}[5/6] Starting Market Data...${NC}"
-docker compose -f marketdata/docker-compose.prod.yml up -d
 
 echo -e "${CYAN}[6/6] Starting Market Maker...${NC}"
 docker compose -f marketmaker/docker-compose.prod.yml up -d

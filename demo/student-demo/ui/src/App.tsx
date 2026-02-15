@@ -152,17 +152,14 @@ function App() {
             {/* SIDEBAR */}
             <div id="sidebar-nav" className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-[#1e293b] border-r border-[#334155] flex flex-col transition-all duration-300 ease-in-out flex-none relative z-10`}>
                 {/* ... (Header) */}
-                <div className="p-6 border-b border-[#334155] cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-between" onClick={() => { setActiveLab('HOME'); setViewMode('GUIDED'); }}>
+                <div className="p-6 border-b border-[#334155] cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-between h-20" onClick={() => { setActiveLab('HOME'); setViewMode('GUIDED'); }}>
                     {isSidebarOpen ? (
-                        <div>
-                            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 whitespace-nowrap">
-                                FinTech EduLab
-                            </h1>
-                            <div className="text-xs text-slate-400 mt-1">Student Demo Environment</div>
+                        <div className="w-full flex justify-start items-center">
+                            <img src={`${import.meta.env.BASE_URL}Scalegrad Logo.svg`} alt="FinTech EduLab" className="h-8 w-auto" />
                         </div>
                     ) : (
-                        <div className="w-full flex justify-center">
-                            <h1 className="text-xl font-bold text-cyan-400">FE</h1>
+                        <div className="w-full flex justify-center items-center">
+                            <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="FE" className="h-8 w-8" />
                         </div>
                     )}
                 </div>
