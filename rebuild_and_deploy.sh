@@ -55,17 +55,25 @@ deploy_service() {
 
     # Docker Operations
     echo -e "${COLOR}[$NAME] Packaging Docker Image...${NC}"
-    docker compose -f "$COMPOSE_FILE" build
+    docker-compose -f "$COMPOSE_FILE" build
 
     echo -e "${COLOR}[$NAME] Deploying...${NC}"
-    docker compose -f "$COMPOSE_FILE" up -d --force-recreate
+    docker-compose -f "$COMPOSE_FILE" up -d --force-recreate
 
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     echo -e "${GREEN}[$NAME] Complete (${DURATION}s)${NC}"
 }
 
-# 2. Build and Deploy Services
+# 2. Start Infrastructure (Ensure everything is running)
+echo -e "${CYAN}[2/6] Starting Infrastructure...${NC}"
+docker-compose -f infrastructure/docker-compose.infra.yml up -d
+
+echo "Waiting 5s for Infrastructure..."
+sleep 5
+
+
+# 3. Build and Deploy Services
 # Market Data
 deploy_service "MD" "marketdata/docker-compose.prod.yml" "marketdata/ui" "$MAGENTA"
 
@@ -84,37 +92,31 @@ deploy_service "MM" "marketmaker/docker-compose.prod.yml" "marketmaker/frontend"
 # Student Demo
 deploy_service "DEMO" "demo/student-demo/docker-compose.yml" "demo/student-demo/ui" "$CYAN"
 
-# 3. Infrastructure
-echo -e "${CYAN}[Infrastructure] Restarting Portal Gateway...${NC}"
-docker compose -f infrastructure/docker-compose.infra.yml up -d --force-recreate nginx-portal
+# 4. Infrastructure
+echo -e "${CYAN}[homeportal] Restarting Portal Gateway...${NC}"
+docker-compose -f infrastructure/docker-compose.infra.yml up -d --force-recreate nginx-portal
 
 echo -e "${GREEN}Deployment Complete! Access at http://localhost/${NC}"
 echo -e "${GREEN}All Builds Successful!${NC}"
 
-# 4. Start Infrastructure (Ensure everything is running)
-echo -e "${CYAN}[2/6] Starting Infrastructure...${NC}"
-docker compose -f infrastructure/docker-compose.infra.yml up -d
-
-echo "Waiting 5s for Infrastructure..."
-sleep 5
 
 # 5. Start remaining services (Redundant check)
 echo -e "${CYAN}[5/6] Starting Market Data...${NC}"
-docker compose -f marketdata/docker-compose.prod.yml up -d
+docker-compose -f marketdata/docker-compose.prod.yml up -d
 
 
 echo -e "${CYAN}[3/6] Starting ECN Gateway...${NC}"
-docker compose -f ecngateway/docker-compose.prod.yml up -d
+docker-compose -f ecngateway/docker-compose.prod.yml up -d
 
 echo -e "${CYAN}[4/6] Starting Exchange...${NC}"
-docker compose -f exchange/docker-compose.prod.yml up -d
+docker-compose -f exchange/docker-compose.prod.yml up -d
 
 
 echo -e "${CYAN}[6/6] Starting Market Maker...${NC}"
-docker compose -f marketmaker/docker-compose.prod.yml up -d
+docker-compose -f marketmaker/docker-compose.prod.yml up -d
 
 echo -e "${CYAN}[7/7] Starting Student Demo...${NC}"
-docker compose -f demo/student-demo/docker-compose.yml up -d
+docker-compose -f demo/student-demo/docker-compose.yml up -d
 
 echo -e "${GREEN}-------------------------------------------${NC}"
 echo -e "${GREEN}Full Stack Deployed with Proxy Routing!${NC}"
